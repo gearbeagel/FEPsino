@@ -21,7 +21,7 @@ function GameCard({ title, description, icon, link }) {
 
 export default function Home() {
   return (
-    <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b bg-gradient-from-b from-gray-900 to-black pt-12 pb-4">
+    <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-12 pb-4">
       <section className="flex-none flex items-center justify-center">
         <div className="container mx-auto text-center">
           <h2 className="text-4xl md:text-6xl font-bold my-4">
@@ -33,7 +33,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex-grow flex items-center justify-center mt-16">
+      <section className="flex-grow flex items-center justify-center sm:mt-2 md:mt-16 sm:p-6 sm:pt-40 md:p-0 overflow-y-auto">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold mb-4 text-center">
             Our Featured Games
