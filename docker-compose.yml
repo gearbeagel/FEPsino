@@ -1,3 +1,4 @@
+version: "3"
 services:
   backend:
     build:
@@ -39,5 +40,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      - db
+
 volumes:
-    postgres_data:
+  postgres_data:
+  sonarqube_data:
+  sonarqube_logs:
