@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import About from "./components/About";
 import Blackjack from "./components/games/BlackjackGame";
 import DiceGame from "./components/games/DiceGame.jsx";
+import SignUp from "./components/user/SignUp.jsx";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/dice" element={<DiceGame />} />
           <Route path="/profile" element={<h1>Profile</h1>} />
           <Route path="/about" element={<About />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       <Footer />
     </div>

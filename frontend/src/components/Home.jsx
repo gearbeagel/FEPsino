@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 function GameCard({ title, description, icon, link }) {
   return (
-    <div className="bg-gray-800 border border-yellow-400 rounded-lg p-6 text-center">
+    <div className="bg-slate-900 border border-yellow-400 rounded-lg p-6 text-center">
       <div className="flex items-center justify-center text-2xl font-bold text-yellow-400">
         {icon}
         <span className="ml-2">{title}</span>

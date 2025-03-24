@@ -29,9 +29,9 @@ export default function Header() {
             </li>
           </ul>
         </nav>
-        <button className="border border-yellow-400 bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors">
+        <Link to="/signup"><button className="border border-yellow-400 bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors">
           Login / Sign Up
-        </button>
+        </button></Link>
       </div>
     </header>
   );
