@@ -52,8 +52,7 @@ export default function DiceGame() {
     const diceD12 = (value) => diceSVG(value, "50,10 90,30 90,70 50,90 10,70 10,30");
 
     return (
-        <div className="flex flex-col bg-gradient-to-b from-gray-900 to-black text-white">
-            <main className="flex-grow flex flex-col items-center p-6">
+            <div className="flex-grow flex flex-col items-center p-6">
                 <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full">
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center">
@@ -155,7 +154,6 @@ export default function DiceGame() {
                     )}
                 </div>
 
-            </main>
-        </div>
+            </div>
     );
 }

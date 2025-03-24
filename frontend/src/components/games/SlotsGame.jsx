@@ -73,9 +73,7 @@ export default function SlotsGame() {
   };
 
   return (
-      <div className="bg-black text-white">
-        <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-5">
-          <div className="container max-w-4xl mx-auto">
+      <div className="container max-w-4xl mx-auto">
             <div className="bg-slate-900 border border-yellow-400 rounded-lg p-6 mb-8">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
@@ -149,8 +147,6 @@ export default function SlotsGame() {
                 {isSpinning ? 'Spinning...' : 'Spin'}
               </button>
             </div>
-          </div>
-        </main>
       </div>
   );
 }

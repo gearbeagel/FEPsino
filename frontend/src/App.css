@@ -3,3 +3,25 @@
 a, Link, button {
     cursor: pointer;
 }
+
+.fade-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.fade-exit-active {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 10ms ease-in-out, transform 10ms ease-in-out;
+}
+
+.fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
