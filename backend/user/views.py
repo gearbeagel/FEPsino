@@ -1,18 +1,12 @@
 """
 Views for the user API.
 """
-
-import logging
-
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import UserSerializer
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
-
-logger = logging.getLogger(__name__)
 
 
 class CreateUserView(generics.CreateAPIView):
