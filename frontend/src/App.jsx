@@ -3,12 +3,12 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { useRef } from "react";
 import Home from "./components/Home";
 import SlotsGame from "./components/games/SlotsGame";
-import "./App.css";
 import Header from "./components/Header";
 import About from "./components/About";
 import Blackjack from "./components/games/BlackjackGame";
 import DiceGame from "./components/games/DiceGame.jsx";
-import SignUp from "./components/user/SignUp.jsx";
+import SignUpIn from "./components/user/SignUpIn.jsx";
+import "./App.css";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -19,7 +19,7 @@ function AnimatedRoutes() {
         <CSSTransition
             key={location.pathname}
             nodeRef={nodeRef}
-            timeout={150}  // Adjusted timeout to give enough time for both fade-out and fade-in
+            timeout={200}
             classNames="fade"
             unmountOnExit
             onEntering={() => { document.body.style.overflow = "auto"; }}
@@ -33,7 +33,7 @@ function AnimatedRoutes() {
               <Route path="/dice" element={<DiceGame />} />
               <Route path="/profile" element={<h1>Profile</h1>} />
               <Route path="/about" element={<About />} />
-              <Route path="/signup" element={<SignUp />} />
+              <Route path="/signup" element={<SignUpIn />} />
             </Routes>
           </div>
         </CSSTransition>
