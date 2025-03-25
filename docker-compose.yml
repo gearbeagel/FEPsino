@@ -54,7 +54,28 @@ services:
     depends_on:
       - db
 
+  sonarscanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    container_name: sonarscanner
+    environment:
+      - SONAR_HOST_URL=${SONAR_HOST_URL}
+      - SONAR_LOGIN=${SONAR_TOKEN}
+    volumes:
+      - ./backend:/usr/src
+    depends_on:
+      - sonarqube
+    command: >
+      sh -c "./scripts/wait-for-sonar.sh sonarqube:9000 -- 
+             sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME"
+    restart: "no"
+    networks:
+      - default
+
 volumes:
   postgres_data:
   sonarqube_data:
   sonarqube_logs:
+
+networks:
+  default:
+    driver: bridge
