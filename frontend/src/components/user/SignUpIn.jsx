@@ -31,7 +31,7 @@ export default function SignUpIn() {
         setError(null);
 
         if (!email || !password || (isSignUp && !confirmPassword)) {
-            toast.error("All fields are required!", { className: 'bg-slate-900 ' });
+            toast.error("All fields are required!");
             return;
         }
 
@@ -78,8 +78,6 @@ export default function SignUpIn() {
                         {isSignUp ? "Sign up" : "Sign in"}
                     </span>
                 </div>
-
-                {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
 
                 <AnimatePresence mode="wait">
                     <motion.div
