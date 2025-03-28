@@ -23,8 +23,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST}
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app-frontend
+      - frontend_node_modules:/app-frontend/node_modules
     depends_on:
       - backend
 
@@ -79,6 +84,7 @@ volumes:
   postgres_data:
   sonarqube_data:
   sonarqube_logs:
+  frontend_node_modules:
 
 networks:
   default:
