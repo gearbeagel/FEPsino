@@ -9,6 +9,7 @@ import DiceGame from "./components/games/DiceGame.jsx";
 import SignUpIn from "./components/user/SignUpIn.jsx";
 import routerVariants from "./components/animations/RouterAnimations.jsx";
 import "./App.css";
+import Profile from "./components/user/Profile.jsx";
 
 const withAnimation = (WrappedComponent) => {
     return function AnimatedComponent(props) {
@@ -32,6 +33,7 @@ const AnimatedBlackjack = withAnimation(Blackjack);
 const AnimatedDiceGame = withAnimation(DiceGame);
 const AnimatedAbout = withAnimation(About);
 const AnimatedSignUpIn = withAnimation(SignUpIn);
+const AnimatedProfile = withAnimation(Profile);
 
 function AnimatedRoutes() {
     const location = useLocation();
@@ -43,9 +45,9 @@ function AnimatedRoutes() {
                 <Route path="/slots" element={<AnimatedSlotsGame />} />
                 <Route path="/blackjack" element={<AnimatedBlackjack />} />
                 <Route path="/dice" element={<AnimatedDiceGame />} />
-                <Route path="/profile" element={<h1>Profile</h1>} />
                 <Route path="/about" element={<AnimatedAbout />} />
                 <Route path="/signup" element={<AnimatedSignUpIn />} />
+                <Route path="/profile" element={<AnimatedProfile />} />
             </Routes>
         </AnimatePresence>
     );
