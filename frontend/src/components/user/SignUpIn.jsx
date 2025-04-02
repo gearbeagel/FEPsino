@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import formVariants from "../animations/FormAnimations";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {useNavigate} from "react-router-dom";
 
 
 const AuthButton = ({ onClick, children }) => (
@@ -22,6 +23,7 @@ export default function SignUpIn() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isSignUp, setIsSignUp] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     const toggleForm = () => setIsSignUp(!isSignUp);
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -53,6 +55,8 @@ export default function SignUpIn() {
                 localStorage.setItem("access_token", res.data.access);
                 localStorage.setItem("refresh_token", res.data.refresh);
                 axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.access}`;
+                window.location.reload();
+                navigate("/");
             }
 
             toast.success(res.data.message);

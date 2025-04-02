@@ -1,6 +1,6 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import fetchUser from "./UserApi.jsx";
-import {Banknote, DollarSign, Mail, Pencil, User} from "lucide-react";
+import { Banknote, DollarSign, Mail, Pencil, User2, User } from "lucide-react";
 
 export default function Profile() {
     const [user, setUser] = useState(null);
@@ -11,7 +11,7 @@ export default function Profile() {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const res = await fetchUser()
+                const res = await fetchUser();
                 setUser(res);
             } catch (err) {
                 console.error('Error fetching user:', err);
@@ -51,16 +51,8 @@ export default function Profile() {
 
     return (
         <div className="flex-grow flex flex-col items-center p-6">
-            <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full">
-                <div className="flex relative justify-between items-center mb-4">
-                    <div className="absolute top-0 right-0 flex flex-col space-y-2">
-                        <button
-                            onClick={() => setIsEditing(!isEditing)}
-                            className="flex row bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors w-auto"
-                        > <Pencil className="h-6 w-6 text-black mr-2"/> {isEditing ? "Save" : "Edit"} </button>
-                        <button className="flex row bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors w-auto">
-                            <DollarSign className="h-6 w-6 text-black mr-2"/>Top Up</button>
-                    </div>
+            <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full relative">
+                <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
                         <User className="h-6 w-6 text-yellow-400 mr-2"/>
                         <span className="text-xl text-yellow-400">Profile</span>
@@ -73,6 +65,16 @@ export default function Profile() {
                     <div className="flex items-center">
                         <Banknote className="h-6 w-6 text-yellow-400 mr-2"/><span className="text-xl"> $1000 </span>
                     </div>
+                </div>
+                <div className="flex flex-row w-full space-x-2 mt-4">
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors"
+                    > <Pencil className="h-6 w-6 text-black mr-2"/> {isEditing ? "Save" : "Edit"} </button>
+                    <button className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors">
+                        <DollarSign className="h-6 w-6 text-black mr-2"/>Top Up</button>
+                    <button className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors">
+                        <User2 className="h-6 w-6 text-black mr-2"/>Log out</button>
                 </div>
                 { isEditing &&
                     <form onSubmit={handleEdit} className="flex flex-col gap-4 mt-6">
@@ -104,5 +106,5 @@ export default function Profile() {
                 }
             </div>
         </div>
-)
+    );
 }
