@@ -194,3 +194,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/backend/.scannerwork/.sonar_lock
+/backend/.scannerwork/report-task.txt

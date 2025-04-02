@@ -4,12 +4,12 @@ import Home from "./components/Home";
 import SlotsGame from "./components/games/SlotsGame";
 import Header from "./components/Header";
 import About from "./components/About";
-import Blackjack from "./components/games/BlackjackGame";
 import DiceGame from "./components/games/DiceGame.jsx";
 import SignUpIn from "./components/user/SignUpIn.jsx";
 import routerVariants from "./components/animations/RouterAnimations.jsx";
 import "./App.css";
 import Profile from "./components/user/Profile.jsx";
+import BlackJackGame from "./components/games/BlackjackGame.jsx";
 
 const withAnimation = (WrappedComponent) => {
     return function AnimatedComponent(props) {
@@ -29,7 +29,7 @@ const withAnimation = (WrappedComponent) => {
 
 const AnimatedHome = withAnimation(Home);
 const AnimatedSlotsGame = withAnimation(SlotsGame);
-const AnimatedBlackjack = withAnimation(Blackjack);
+const AnimatedBlackjack = withAnimation(BlackJackGame);
 const AnimatedDiceGame = withAnimation(DiceGame);
 const AnimatedAbout = withAnimation(About);
 const AnimatedSignUpIn = withAnimation(SignUpIn);
