@@ -88,33 +88,6 @@ export default function DiceGame() {
                         </div>
                     </div>
                 </div>
-                <div className="flex gap-4 items-center mt-6">
-                    <div className="flex-1">
-                        <label className="block text-sm mb-1">Bet Amount</label>
-                        <select
-                            value={bet}
-                            onChange={(e) => setBet(Number(e.target.value))}
-                            className="w-full bg-gray-700 rounded p-2 text-white "
-                        >
-                            <option value="10">$10</option>
-                            <option value="20">$20</option>
-                            <option value="50">$50</option>
-                            <option value="100">$100</option>
-                        </select>
-                    </div>
-                    <button
-                        onClick={() => setBet(prev => Math.min(prev * 2, 100))}
-                        className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-                    >
-                        2x
-                    </button>
-                    <button
-                        onClick={() => setBet(10)}
-                        className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
-                    >
-                        <RotateCcw className="h-5 w-5 text-yellow-400" />
-                    </button>
-                </div>
 
                 <div className="flex flex-col gap-4 mt-2">
                     <div className="flex flex-col">
@@ -166,9 +139,9 @@ export default function DiceGame() {
                 )}
                 {gameInitialized && (
                     lastWin > 0 ? (
-                        <div className="text-center text-xl text-yellow-400">You won ${lastWin}</div>
+                        <div className="text-center text-xl text-green-400">You won ${lastWin}!</div>
                     ) : (
-                        <div className="text-center text-xl text-red-400">You lost ${bet}</div>
+                        <div className="text-center text-xl text-red-400">You lost ${bet}!</div>
                     )
                 )}
             </div>
