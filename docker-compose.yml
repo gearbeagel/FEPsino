@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     command: >
-      sh -c "./scripts/wait-for-db.sh &&
+      chmod +x ./scripts/wait-for-db.sh && sh -c "./scripts/wait-for-db.sh &&
              python manage.py makemigrations &&
              python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"

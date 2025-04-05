@@ -17,6 +17,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 RUN chmod +x scripts/wait-for-db.sh
+RUN chmod +x scripts/wait-for-sonar.sh
+RUN chmod +x scripts/init-db.sh
 
 EXPOSE 8000
 
