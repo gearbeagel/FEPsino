@@ -6,6 +6,7 @@ class DiceGame:
         self.user_coins = user_coins
 
     def start_game(self, choice1, choice2, bet, guessed_number):
+        """ Runs the dice game logic."""
         fig1 = self.figure_factories[choice1].create_figure()
         fig2 = self.figure_factories[choice2].create_figure()
 
@@ -33,7 +34,9 @@ class DiceGame:
             "new_balance": new_balance
         }
 
-    def _calculate_payout(self, fig1, fig2, bet, total, guessed_number):
+    @staticmethod
+    def _calculate_payout(fig1, fig2, bet, total, guessed_number):
+        """ Calculate the payout based on the game rules."""
         min_faces = min(fig1.faces, fig2.faces)
         max_faces = max(fig1.faces, fig2.faces)
         multiplier = (min_faces + max_faces) / 10
