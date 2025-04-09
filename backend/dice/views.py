@@ -7,11 +7,13 @@ from .serializers import StartDiceGameSerializer
 from .game_logic import DiceGame
 from .dice import get_figure_factories
 from .models import DiceGame as DiceGameModel
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class DiceGameView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = StartDiceGameSerializer
+    authentication_classes = [JWTAuthentication]
 
     @extend_schema(
         request=StartDiceGameSerializer,
