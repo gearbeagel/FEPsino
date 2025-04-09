@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Dice5, RotateCcw } from "lucide-react";
+import { Dice5 } from "lucide-react";
 import { motion } from "framer-motion";
 import diceVariants from "../animations/DiceSpinningAnimation.jsx";
+import { getRandomInt } from "./GameApi.jsx";
 
 export default function DiceGame() {
     const [balance, setBalance] = useState(1000);
-    const [bet, setBet] = useState(10);
+    const [bet] = useState(10);
     const [lastWin, setLastWin] = useState(0);
     const [diceType1, setDiceType1] = useState('d6');
     const [diceType2, setDiceType2] = useState('d6');
@@ -23,29 +24,63 @@ export default function DiceGame() {
 
     const totalSides = diceSides[diceType1] + diceSides[diceType2];
 
+    const getMaxValue = (diceType) => diceSides[diceType] || 6;
+
+    const calculateWinAmount = (sum) => {
+        if (sum === selectedNumber) return 40;
+        if (sum === selectedNumber - 1 || sum === selectedNumber + 1) return 30;
+        return 0;
+    };
+
+    const updateBalance = (winAmount) => {
+        setBalance(prev => prev + winAmount - bet);
+        setLastWin(winAmount);
+    };
+
     const rollDice = () => {
         setRolling(true);
         setTimeout(() => {
-            const max1 = diceType1 === 'd8' ? 8 : diceType1 === 'd12' ? 12 : 6;
-            const max2 = diceType2 === 'd8' ? 8 : diceType2 === 'd12' ? 12 : 6;
-            const newValue1 = Math.floor(Math.random() * max1) + 1;
-            const newValue2 = Math.floor(Math.random() * max2) + 1;
+            const max1 = getMaxValue(diceType1);
+            const max2 = getMaxValue(diceType2);
+            const newValue1 = getRandomInt(max1);
+            const newValue2 = getRandomInt(max2);
             setDiceValue1(newValue1);
             setDiceValue2(newValue2);
 
             const sum = newValue1 + newValue2;
-            let winAmount = 0;
-            if (sum === selectedNumber) {
-                winAmount = 40;
-            } else if (sum === selectedNumber - 1 || sum === selectedNumber + 1) {
-                winAmount = 30;
-            }
-            setBalance(prev => prev + winAmount - bet);
-            setLastWin(winAmount);
+            const winAmount = calculateWinAmount(sum);
+            updateBalance(winAmount);
+
             setGameInitialized(true);
             setRolling(false);
         }, 500);
     };
+
+    const getDiceComponent = (diceType, diceValue) => {
+        switch (diceType) {
+            case 'd6':
+                return diceD6(diceValue);
+            case 'd8':
+                return diceD8(diceValue);
+            case 'd12':
+                return diceD12(diceValue);
+            default:
+                return null;
+        }
+    };
+
+    const getInitDiceComponent = (diceType) => {
+        switch (diceType) {
+            case 'd6':
+                return diceD6(6);
+            case 'd8':
+                return diceD8(8);
+            case 'd12':
+                return diceD12(12);
+            default:
+                return null;
+        }
+    }
 
     const diceSVG = (diceValue, points) => (
         <svg width="75" height="75" viewBox="0 0 100 100">
@@ -121,20 +156,20 @@ export default function DiceGame() {
                             initial="initial"
                             animate={rolling ? "animate" : "initial"}
                         >
-                            {diceType1 === 'd6' ? diceD6(diceValue1) : diceType1 === 'd8' ? diceD8(diceValue1) : diceD12(diceValue1)}
+                            {getDiceComponent(diceType1, diceValue1)}
                         </motion.div>
                         <motion.div
                             variants={diceVariants}
                             initial="initial"
                             animate={rolling ? "animate" : "initial"}
                         >
-                            {diceType2 === 'd6' ? diceD6(diceValue2) : diceType2 === 'd8' ? diceD8(diceValue2) : diceD12(diceValue2)}
+                            {getDiceComponent(diceType2, diceValue2)}
                         </motion.div>
                     </div>
                 ) : (
                     <div className="flex justify-center gap-4 mb-4">
-                        {diceType1 === 'd6' ? diceD6(6) : diceType1 === 'd8' ? diceD8(8) : diceD12(12)}
-                        {diceType2 === 'd6' ? diceD6(6) : diceType2 === 'd8' ? diceD8(8) : diceD12(12)}
+                        {getInitDiceComponent(diceType1)}
+                        {getInitDiceComponent(diceType2)}
                     </div>
                 )}
                 {gameInitialized && (

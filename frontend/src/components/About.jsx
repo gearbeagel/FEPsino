@@ -5,8 +5,7 @@ export default function About() {
         <h1 className="text-3xl font-bold mb-4">About FEPSino</h1>
         <p className="text-lg text-gray-400">
           FEPSino is a fictional online casino that offers a variety of games
-          for entertainment purposes. This project is a demo to showcase the use
-          of React, Tailwind CSS, and Lucide icons.
+          for entertainment purposes.
         </p>
       </div>
       <div className="bg-slate-900 border border-yellow-400 rounded-lg p-6 mt-8">

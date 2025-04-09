@@ -4,8 +4,6 @@ import { Banknote, DollarSign, Mail, Pencil, User2, User } from "lucide-react";
 
 export default function Profile() {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
@@ -15,8 +13,6 @@ export default function Profile() {
                 setUser(res);
             } catch (err) {
                 console.error('Error fetching user:', err);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -25,7 +21,6 @@ export default function Profile() {
 
     const handleEdit = async (e) => {
         e.preventDefault();
-        setError(null);
 
         try {
             const res = await fetch(`${apiUrl}/user/update/`, {
@@ -43,7 +38,7 @@ export default function Profile() {
             setUser(data);
             setIsEditing(false);
         } catch (err) {
-            setError(err.message);
+            console.log(err.message);
         }
     }
 
@@ -77,7 +72,7 @@ export default function Profile() {
                         <User2 className="h-6 w-6 text-black mr-2"/>Log out</button>
                 </div>
                 { isEditing &&
-                    <form onSubmit={handleEdit} className="flex flex-col gap-4 mt-6">
+                    <form onSubmit={handleEdit} data-testid="edit-form" className="flex flex-col gap-4 mt-6">
                         <label className="block text-sm mb-1">Old Password</label>
                         <input
                             type="password"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Club, Play, RotateCcw, Heart, Diamond, Spade } from "lucide-react";
 
 const suits = { hearts: <Heart className="text-red-500" />, diamonds: <Diamond className="text-red-500" />, clubs: <Club className="text-black" />, spades: <Spade className="text-black" /> };
@@ -28,7 +28,12 @@ function createDeck() {
 }
 
 function shuffleDeck(deck) {
-    return [...deck].sort(() => Math.random() - 0.5);
+    const array = [...deck];
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(window.crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1) * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
 export default function BlackJackGame() {
@@ -85,9 +90,11 @@ export default function BlackJackGame() {
         }
         if (playerValue > 21 || (dealerValue <= 21 && dealerValue >= playerValue)) {
             setGameResult(`You lost $${bet}!`);
+            setLastWin(bet);
             setBalance(balance - bet);
         } else {
             setGameResult(`You won $${bet}!`);
+            setLastWin(bet);
             setBalance(balance + bet);
         }
         setGameInitialized(false);

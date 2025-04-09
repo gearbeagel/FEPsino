@@ -5,17 +5,24 @@ import { AnimatePresence, motion } from "framer-motion";
 import formVariants from "../animations/FormAnimations";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {useNavigate} from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
 
 const AuthButton = ({ onClick, children }) => (
     <button
+        name="authButton"
         onClick={onClick}
         className="bg-yellow-400 text-black hover:bg-yellow-500 px-6 py-2 rounded mt-4 transition-colors w-100 flex items-center justify-center"
+        data-testid="auth-submit"
     >
         {children}
     </button>
 );
+
+AuthButton.propTypes = {
+    onClick: PropTypes.func.isRequired,
+    children: PropTypes.node.isRequired,
+};
 
 export default function SignUpIn() {
     const [email, setEmail] = useState("");
@@ -60,11 +67,10 @@ export default function SignUpIn() {
             }
 
             toast.success(res.data.message);
-            console.log(`${isSignUp ? "Signup" : "Login"} successful`, res.data);
             if (isSignUp) setTimeout(() => setIsSignUp(false), 500);
         } catch (err) {
             setError(err.response?.data?.detail || "Authentication failed");
-            console.log(err);
+            console.log(error);
         }
     };
 
@@ -78,9 +84,9 @@ export default function SignUpIn() {
             >
                 <div className="flex items-center">
                     <User className="h-6 w-6 text-yellow-400 mr-2" />
-                    <span className="text-xl text-yellow-400">
-                        {isSignUp ? "Sign up" : "Sign in"}
-                    </span>
+                    <span className="text-xl text-yellow-400" data-testid="auth-title">
+            {isSignUp ? "Sign up" : "Sign in"}
+          </span>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -91,32 +97,41 @@ export default function SignUpIn() {
                         animate="visible"
                         exit="hidden"
                     >
-                        <div className="text-sm my-3">Email:</div>
+                        <label htmlFor="email" className="text-sm my-3">Email:</label>
                         <input
+                            id="email"
+                            name="email"
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-gray-700 rounded p-2 text-white"
+                            data-testid="email-input"
                         />
-                        <div className="text-sm my-3">Password:</div>
+                        <label htmlFor="password" className="text-sm my-3">Password:</label>
                         <input
+                            id="password"
+                            name="password"
                             type="password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full bg-gray-700 rounded p-2 text-white"
+                            data-testid="password-input"
                         />
 
                         {isSignUp && (
                             <>
-                                <div className="text-sm my-3">Confirm Password:</div>
+                                <label htmlFor="confirmPassword" className="text-sm my-3">Confirm Password:</label>
                                 <input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
                                     type="password"
                                     required
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     className="w-full bg-gray-700 rounded p-2 text-white"
+                                    data-testid="confirm-password-input"
                                 />
                             </>
                         )}
@@ -124,7 +139,11 @@ export default function SignUpIn() {
                         <div className="flex flex-col items-center">
                             <div className="text-sm text-gray-400 mt-4">
                                 {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                                <button onClick={toggleForm} className="text-yellow-400">
+                                <button
+                                    onClick={toggleForm}
+                                    className="text-yellow-400"
+                                    data-testid="toggle-auth-form"
+                                >
                                     {isSignUp ? "Sign in" : "Sign up"}
                                 </button>
                             </div>
