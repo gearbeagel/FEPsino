@@ -2,7 +2,7 @@ from django.db import models
 from user.models import User
 
 
-class DiceGame(models.Model):
+class DiceGameModel(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     bet = models.IntegerField()
     guessed_number = models.IntegerField()

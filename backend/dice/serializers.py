@@ -9,6 +9,7 @@ class StartDiceGameSerializer(serializers.Serializer):
     user_coins = serializers.IntegerField(min_value=0)
 
     def validate(self, data):
+        """Validates that the guessed number is within the valid range based on the selected dice."""
         choice1_faces = int(data['choice1'])
         choice2_faces = int(data['choice2'])
         max_possible_sum = choice1_faces + choice2_faces
