@@ -16,5 +16,3 @@ class DiceGameModel(models.Model):
     def __str__(self):
         return f"{self.user.email}'s game with bet {self.bet}"
 
-    def save_game_result(self):
-        self.save()
