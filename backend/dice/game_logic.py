@@ -1,7 +1,6 @@
 
 class DiceGameLogic:
-    def __init__(self, session, figure_factories, user_coins):
-        self.session = session
+    def __init__(self, figure_factories, user_coins):
         self.figure_factories = figure_factories
         self.user_coins = user_coins
 
@@ -11,25 +10,13 @@ class DiceGameLogic:
         roll1, roll2 = self._roll_dice(fig1, fig2)
         total = roll1 + roll2
         payout = self._calculate_payout(fig1, fig2, bet, total, guessed_number)
-        new_balance = self.user_coins - bet + payout
-
-        self._save_to_session({
-            "figure1": choice1,
-            "figure2": choice2,
-            "bet": bet,
-            "guessed_number": guessed_number,
-            "roll1": roll1,
-            "roll2": roll2,
-            "total": total,
-            "payout": payout,
-            "new_balance": new_balance,
-        })
+        user_coins = self.user_coins - bet + payout
 
         return {
             "rolls": (roll1, roll2),
             "total": total,
             "payout": payout,
-            "new_balance": new_balance
+            "user_coins": user_coins
         }
 
     def _create_figures(self, choice1, choice2):
@@ -56,9 +43,3 @@ class DiceGameLogic:
             return int(bet * multiplier)
         else:
             return 0
-
-    def _save_to_session(self, data):
-        """Saves game data to the session."""
-        for key, value in data.items():
-            self.session[key] = value
-        self.session.modified = True

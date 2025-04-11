@@ -6,7 +6,6 @@ class StartDiceGameSerializer(serializers.Serializer):
     choice2 = serializers.ChoiceField(choices=["6", "8", "12"])
     bet = serializers.IntegerField(min_value=1)
     guessed_number = serializers.IntegerField(min_value=2)
-    user_coins = serializers.IntegerField(min_value=0)
 
     def validate(self, data):
         """Validates that the guessed number is within the valid range based on the selected dice."""

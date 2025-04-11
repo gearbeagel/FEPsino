@@ -1,26 +1,45 @@
-from .game_logic import DiceGameLogic
 from .dice import get_figure_factories
+from .game_logic import DiceGameLogic
 from .models import DiceGameModel
 
 
 class DiceGameService:
-
     @staticmethod
-    def get_user_coins(session, data):
-        """Retrieves the current number of user coins from the session."""
-        return session.get('user_coins', data['user_coins'])
+    def run_game_logic(user, data):
+        """Handles the game logic sequence."""
+        bet = data['bet']
+        DiceGameService.check_user_coins(user, bet)
+        DiceGameService.deduct_bet(user, bet)
 
-    @staticmethod
-    def run_game_logic(session, user_coins, data):
-        """Initializes the game logic and runs the main game sequence."""
-        figure_factories = get_figure_factories()
-        game = DiceGameLogic(session, figure_factories, user_coins)
-        return game.start_game(
+        game_logic = DiceGameLogic(get_figure_factories(), user.coin_balance)
+        result = game_logic.start_game(
             choice1=data['choice1'],
             choice2=data['choice2'],
             bet=data['bet'],
             guessed_number=data['guessed_number']
         )
+        DiceGameService.save_game_to_db(user, data, result)
+        DiceGameService.update_balance(user, result["payout"])
+
+        return result
+
+    @staticmethod
+    def check_user_coins(user, bet):
+        """Check if the user has enough coins to place the bet."""
+        if bet > user.coin_balance:
+            raise ValueError('Not enough coins!')
+
+    @staticmethod
+    def deduct_bet(user, bet):
+        """Deduct the bet amount from the user's coin balance."""
+        user.coin_balance -= bet
+
+    @staticmethod
+    def update_balance(user, payout):
+        """Update the user's balance after the game."""
+        new_balance = user.coin_balance + payout
+        user.coin_balance = new_balance
+        user.save()
 
     @staticmethod
     def save_game_to_db(user, data, result):
@@ -35,7 +54,6 @@ class DiceGameService:
             roll2=result['rolls'][1],
             total=result['total'],
             payout=result['payout'],
-            new_balance=result['new_balance'],
         )
 
     @staticmethod
@@ -46,6 +64,6 @@ class DiceGameService:
             "roll2": result["rolls"][1],
             "total": result["total"],
             "payout": result["payout"],
-            "new_balance": result["new_balance"],
+            "new_balance": result["user_coins"],
             "message": "You won!" if result["payout"] > 0 else "You lost."
         }

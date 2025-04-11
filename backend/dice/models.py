@@ -12,10 +12,9 @@ class DiceGameModel(models.Model):
     roll2 = models.IntegerField()
     total = models.IntegerField()
     payout = models.IntegerField()
-    new_balance = models.IntegerField()
 
     def __str__(self):
-        return f"{self.user.user_name}'s game with bet {self.bet}"
+        return f"{self.user.email}'s game with bet {self.bet}"
 
     def save_game_result(self):
         self.save()
