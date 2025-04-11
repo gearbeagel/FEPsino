@@ -66,7 +66,7 @@ class DodecahedronFactory(FigureFactory):
 def get_figure_factories():
     """ Returns a dictionary of figure factories. """
     return {
-        "6": CubeFactory(),
-        "8": OctahedronFactory(),
-        "12": DodecahedronFactory()
+        6: CubeFactory(),
+        8: OctahedronFactory(),
+        12: DodecahedronFactory()
     }
