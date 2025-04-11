@@ -28,7 +28,6 @@ class DiceGameView(APIView):
         try:
             result = DiceGameService.run_game_logic(user, data)
             DiceGameService.save_game_to_db(user, data, result)
-
             return Response(DiceGameService.build_response(result))
 
         except ValueError as e:
