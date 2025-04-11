@@ -12,6 +12,8 @@ class GameContext:
 
 
 class DiceGameLogic:
+    PAYOUT_SCALE_FACTOR = 10
+
     def __init__(self, figure_factories, user_coins):
         self.figure_factories = figure_factories
         self.user_coins = user_coins
@@ -49,12 +51,12 @@ class DiceGameLogic:
         """Rolls two dice."""
         return fig1.roll(), fig2.roll()
 
-    @staticmethod
-    def _calculate_payout(ctx: GameContext):
+    @classmethod
+    def _calculate_payout(cls, ctx: GameContext):
         """Calculates payout based on game context."""
         min_faces = min(ctx.fig1.faces, ctx.fig2.faces)
         max_faces = max(ctx.fig1.faces, ctx.fig2.faces)
-        multiplier = (min_faces + max_faces) / 10
+        multiplier = (min_faces + max_faces) / cls.PAYOUT_SCALE_FACTOR
 
         match ctx.total:
             case _ if ctx.total == ctx.guessed_number:
