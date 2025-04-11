@@ -1,3 +1,4 @@
+from django.db import transaction
 from .dice import get_figure_factories
 from .game_logic import DiceGameLogic
 from .models import DiceGameModel
@@ -7,19 +8,20 @@ class DiceGameService:
     @staticmethod
     def run_game_logic(user, data):
         """Handles the game logic sequence."""
-        bet = data['bet']
-        DiceGameService.check_user_coins(user, bet)
-        DiceGameService.deduct_bet(user, bet)
+        with transaction.atomic():
+            bet = data['bet']
+            DiceGameService.check_user_coins(user, bet)
+            DiceGameService.deduct_bet(user, bet)
 
-        game_logic = DiceGameLogic(get_figure_factories(), user.coin_balance)
-        result = game_logic.start_game(
-            choice1=data['choice1'],
-            choice2=data['choice2'],
-            bet=data['bet'],
-            guessed_number=data['guessed_number']
-        )
-        DiceGameService.save_game_to_db(user, data, result)
-        DiceGameService.update_balance(user, result["payout"])
+            game_logic = DiceGameLogic(get_figure_factories(), user.coin_balance)
+            result = game_logic.start_game(
+                choice1=data['choice1'],
+                choice2=data['choice2'],
+                bet=data['bet'],
+                guessed_number=data['guessed_number']
+            )
+            DiceGameService.save_game_to_db(user, data, result)
+            DiceGameService.update_balance(user, result["payout"])
 
         return result
 
