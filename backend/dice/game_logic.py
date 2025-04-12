@@ -57,7 +57,6 @@ class DiceGameLogic:
         min_faces = min(ctx.fig1.faces, ctx.fig2.faces)
         max_faces = max(ctx.fig1.faces, ctx.fig2.faces)
         multiplier = (min_faces + max_faces) / cls.PAYOUT_SCALE_FACTOR
-
         match ctx.total:
             case _ if ctx.total == ctx.guessed_number:
                 return int(ctx.bet * (multiplier + 1))

@@ -6,8 +6,7 @@ from .models import DiceGameModel
 
 class DiceGameService:
     @staticmethod
-    def run_game_logic(user, data):
-        """Handles the game logic sequence."""
+    def execute_game_flow(user, data):
         with transaction.atomic():
             bet = data['bet']
             CoinService.check_user_coins(user, bet)

@@ -26,7 +26,7 @@ class DiceGameView(APIView):
         data = serializer.validated_data
         user = request.user
         try:
-            result = DiceGameService.run_game_logic(user, data)
+            result = DiceGameService.execute_game_flow(user, data)
             return Response(DiceGameService.build_response(result))
 
         except ValueError as e:
