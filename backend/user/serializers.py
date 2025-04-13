@@ -1,12 +1,11 @@
 """
 Serializers for the user API View.
 """
-from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from user.models import Profile
+from user.models import Profile, Transaction
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    """Serializer for the user profile object."""
     user = UserSerializer()
 
     class Meta:
@@ -47,11 +47,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
-class TransactionSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
-    transaction_type = serializers.ChoiceField(
-        choices=(
-            ('DEPOSIT', 'Deposit'),
-            ('WITHDRAWAL', 'Withdrawal')
-        )
-    )
+class TransactionSerializer(serializers.ModelSerializer):
+    """Serializer for transaction history."""
+
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'transaction_type', 'date']
+        read_only_fields = ['date']

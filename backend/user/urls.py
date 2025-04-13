@@ -1,9 +1,8 @@
 """
 URL mappings for the user app.
 """
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
 from django.urls import path
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from user.views import CreateUserView, ManageUserView, LogoutView, TransactionView
 
