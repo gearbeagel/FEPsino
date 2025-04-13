@@ -2,6 +2,10 @@ import random
 
 
 class Card:
+    """
+    Represents a playing card with a rank and suit.
+    """
+
     def __init__(self, rank, suit):
         self.rank = rank
         self.suit = suit
@@ -10,10 +14,21 @@ class Card:
         return f"{self.rank}{self.suit}"
 
     def to_dict(self):
+        """
+        Converts card to dictionary representation for serialization.
+        """
         return {'rank': self.rank, 'suit': self.suit}
 
 
 class BlackjackGame:
+    """
+    Implements the rules and logic for a blackjack card game.
+    """
+
+    # REFACTORING: Extract Constants
+    RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+    SUITS = ['♠', '♥', '♣', '♦']
+
     def __init__(self):
         self.player_hand = []
         self.dealer_hand = []
@@ -21,37 +36,48 @@ class BlackjackGame:
         self.game_over = False
 
     def deal_card(self):
+        """
+        Deals a card from the deck, creating a new deck if necessary.
+        """
         if not self.deck:
             self.create_deck()
         return self.deck.pop()
 
     def create_deck(self):
-
-        ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-        suits = ['♠', '♥', '♣', '♦']
-        self.deck = [Card(rank, suit) for suit in suits for rank in ranks]
-        random.shuffle(self.deck)
-        return self.deck
-
-    def create_deck(self):
+        """
+        Creates and shuffles a standard 52-card deck if one doesn't exist.
+        """
         if self.deck:
             return
-        ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-        suits = ['♠', '♥', '♣', '♦']
-        self.deck = [Card(rank, suit) for suit in suits for rank in ranks]
+
+        self.deck = [Card(rank, suit) for suit in self.SUITS for rank in self.RANKS]
         random.shuffle(self.deck)
 
     def card_value(self, card):
+        """
+        Returns the numerical value of a card for blackjack scoring.
+        """
+        # REFACTORING: Replace Nested Conditional with Guard Clauses
         if card.rank in ['J', 'Q', 'K']:
             return 10
-        elif card.rank == 'A':
+        if card.rank == 'A':
             return 11
-        else:
-            return int(card.rank)
+        return int(card.rank)
+
+    # REFACTORING: Replace Temporary Variable with Query
+    def get_hand_score(self, hand):
+        """
+        Returns the current score of a hand.
+        """
+        return self.calculate_hand(hand)
 
     def calculate_hand(self, hand):
+        """
+        Calculates the total value of a hand, accounting for ace values.
+        """
         total = sum(self.card_value(card) for card in hand)
-        aces = sum(1 for card in hand if card.rank == 'A')
+        # REFACTORING: Simplify calculation of aces count
+        aces = len([card for card in hand if card.rank == 'A'])
 
 
         while total > 21 and aces:
@@ -61,60 +87,105 @@ class BlackjackGame:
         return total
 
     def start_game(self):
+        """
+        Initializes a new game with fresh deck and hands.
+        """
         self.create_deck()
-        self.player_hand = [self.deal_card(), self.deal_card()]
-        self.dealer_hand = [self.deal_card(), self.deal_card()]
+        # REFACTORING: Extract Method - deal initial cards
+        self._deal_initial_cards()
         self.game_over = False
 
-    def player_hit(self):
-        self.player_hand.append(self.deal_card())
-        player_score = self.calculate_hand(self.player_hand)
+    def _deal_initial_cards(self):
+        """
+        Deals the initial cards to player and dealer.
+        """
+        self.player_hand = [self.deal_card(), self.deal_card()]
+        self.dealer_hand = [self.deal_card(), self.deal_card()]
 
+    def player_hit(self):
+        """
+        Processes a player's request for another card and returns the result.
+        """
+        self.player_hand.append(self.deal_card())
+        # REFACTORING: Replace Temporary Variable with Query
+        player_score = self.get_hand_score(self.player_hand)
+
+        # REFACTORING: Replace Nested Conditional with Guard Clauses
         if player_score > 21:
             self.game_over = True
             return "Bust! You lose."
-        elif player_score == 21:
+        if player_score == 21:
             return "Blackjack! 21 points."
         return None
 
     def dealer_play(self):
+        """
+        Executes dealer's play according to standard rules and determines the winner.
+        """
+        # REFACTORING: Extract Method - dealer draws cards
+        self._dealer_draw_cards()
 
-        while self.calculate_hand(self.dealer_hand) < 17:
-            self.dealer_hand.append(self.deal_card())
-
-        player_score = self.calculate_hand(self.player_hand)
-        dealer_score = self.calculate_hand(self.dealer_hand)
+        # REFACTORING: Replace Temporary Variable with Query
+        player_score = self.get_hand_score(self.player_hand)
+        dealer_score = self.get_hand_score(self.dealer_hand)
 
         self.game_over = True
 
+        # REFACTORING: Extract Method - determine game outcome
+        return self._determine_outcome(player_score, dealer_score)
 
+    def _dealer_draw_cards(self):
+        """
+        Dealer draws cards until reaching at least 17 points.
+        """
+        # REFACTORING: Replace Temporary Variable with Query
+        while self.get_hand_score(self.dealer_hand) < 17:
+            self.dealer_hand.append(self.deal_card())
+
+    def _determine_outcome(self, player_score, dealer_score):
+        """
+        Determines the game outcome based on final scores.
+        """
+        # REFACTORING: Replace Nested Conditional with Guard Clauses
         if dealer_score > 21:
             return "Dealer busts! You win!"
-        elif dealer_score == player_score:
+        if dealer_score == player_score:
             return "It's a tie!"
-        elif dealer_score > player_score:
+        if dealer_score > player_score:
             return "Dealer wins!"
-        else:
-            return "You win!"
+        return "You win!"
 
     def get_game_state(self):
+        """
+        Returns the current game state as a dictionary.
+        """
+        # REFACTORING: Remove Dead Code
+        # REFACTORING: Extract Value - improve readability
+        # REFACTORING: Replace Temporary Variable with Query
+        player_score = self.get_hand_score(self.player_hand)
 
-        visible_dealer_cards = self.dealer_hand
-        if not self.game_over and len(self.dealer_hand) > 0:
-            if not self.game_over:
-                dealer_hand_repr = [self.dealer_hand[0].to_dict(), {'rank': '?', 'suit': '?'}]
-                dealer_score = self.card_value(self.dealer_hand[0])
-            else:
-                dealer_hand_repr = [card.to_dict() for card in self.dealer_hand]
-                dealer_score = self.calculate_hand(self.dealer_hand)
+        # REFACTORING: Simplify Conditional Logic
 
+        if self.game_over or not self.dealer_hand:
+            dealer_score = self.get_hand_score(self.dealer_hand)
+            dealer_hand_repr = [card.to_dict() for card in self.dealer_hand]
         else:
-            dealer_score = self.calculate_hand(self.dealer_hand)
+            dealer_score = self.card_value(self.dealer_hand[0]) if self.dealer_hand else 0
+            if self.dealer_hand:
+                dealer_hand_repr = [self.dealer_hand[0].to_dict()]
+                if len(self.dealer_hand) > 1:
+                    dealer_hand_repr.append({'rank': '?', 'suit': '?'})
+            else:
+                dealer_hand_repr = []
 
-        return {
+        # REFACTORING: Extract Variable - improve readability
+        game_state = {
             'player_hand': [card.to_dict() for card in self.player_hand],
-            'dealer_hand': [card.to_dict() for card in self.dealer_hand],
-            'player_score': self.calculate_hand(self.player_hand),
+            'dealer_hand': dealer_hand_repr,
+            'player_score': player_score,
             'dealer_score': dealer_score,
             'game_over': self.game_over,
         }
+
+        return game_state
+

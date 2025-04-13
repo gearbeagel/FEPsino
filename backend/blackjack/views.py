@@ -1,12 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .facade import BlackjackGameFacade
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .serializers import BetSerializer , GameStateSerializer
+from .facade import BlackjackGameFacade
+from .serializers import BetSerializer
 
+"""Views for the Blackjack game app."""
 
 class GameStateView(APIView):
+    """View to get the current game state"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -17,6 +19,7 @@ class GameStateView(APIView):
 
 
 class DealCardsView(APIView):
+    """View to deal initial cards"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -27,6 +30,7 @@ class DealCardsView(APIView):
 
 
 class HitView(APIView):
+    """View to hit (take another card)"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -37,6 +41,7 @@ class HitView(APIView):
 
 
 class StayView(APIView):
+    """View to stay (end turn)"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -47,6 +52,7 @@ class StayView(APIView):
 
 
 class BetView(APIView):
+    """View to place a bet"""
     serializer_class = BetSerializer
     permission_classes = [IsAuthenticated]
 
@@ -62,6 +68,7 @@ class BetView(APIView):
 
 
 class NewGameView(APIView):
+    """View to start a new game"""
 
     permission_classes = [IsAuthenticated]
 
