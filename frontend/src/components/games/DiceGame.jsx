@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Dice5, RotateCcw } from "lucide-react";
+import React, { useState } from "react";
+import { Dice5 } from "lucide-react";
 import { motion } from "framer-motion";
 import diceVariants from "../animations/DiceSpinningAnimation.jsx";
+import {toast, ToastContainer} from "react-toastify";
 
 export default function DiceGame() {
     const [balance, setBalance] = useState(1000);
@@ -23,28 +24,39 @@ export default function DiceGame() {
 
     const totalSides = diceSides[diceType1] + diceSides[diceType2];
 
-    const rollDice = () => {
+    const rollDice = async () => {
         setRolling(true);
-        setTimeout(() => {
-            const max1 = diceType1 === 'd8' ? 8 : diceType1 === 'd12' ? 12 : 6;
-            const max2 = diceType2 === 'd8' ? 8 : diceType2 === 'd12' ? 12 : 6;
-            const newValue1 = Math.floor(Math.random() * max1) + 1;
-            const newValue2 = Math.floor(Math.random() * max2) + 1;
-            setDiceValue1(newValue1);
-            setDiceValue2(newValue2);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/dice/start/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
+                body: JSON.stringify({
+                    choice1: diceSides[diceType1],
+                    choice2: diceSides[diceType2],
+                    bet: bet,
+                    guessed_number: selectedNumber,
+                }),
+            });
 
-            const sum = newValue1 + newValue2;
-            let winAmount = 0;
-            if (sum === selectedNumber) {
-                winAmount = 40;
-            } else if (sum === selectedNumber - 1 || sum === selectedNumber + 1) {
-                winAmount = 30;
+            if (!response.ok) {
+                const errorData = await response.json();
+                const message = errorData.error || 'An unexpected error occurred';
             }
-            setBalance(prev => prev + winAmount - bet);
-            setLastWin(winAmount);
+
+            const result = await response.json();
+            setDiceValue1(result.roll1);
+            setDiceValue2(result.roll2);
+            setLastWin(result.payout);
+            setBalance(result.new_balance);
             setGameInitialized(true);
+        } catch (error) {
+            toast.error(error.message);
+        } finally {
             setRolling(false);
-        }, 500);
+        }
     };
 
     const diceSVG = (diceValue, points) => (
@@ -97,10 +109,29 @@ export default function DiceGame() {
                             onChange={(e) => setSelectedNumber(Number(e.target.value))}
                             className="bg-gray-700 rounded p-2 text-white"
                         >
-                            {[...Array(totalSides).keys()].map(n => (
-                                <option key={n + 1} value={n + 1}>{n + 1}</option>
-                            ))}
+                            {[...Array(totalSides - 1).keys()].map(n => {
+                                const value = n + 2;
+                                return (
+                                    <option key={value} value={value}>{value}</option>
+                                );
+                            })}
                         </select>
+                    </div>
+
+                    <div className="flex gap-4 items-center">
+                        <div className="flex-1">
+                            <label className="block text-sm mb-1">Bet Amount</label>
+                            <select
+                                value={bet}
+                                onChange={(e) => setBet(Number(e.target.value))}
+                                className="w-full bg-gray-700 rounded p-2 text-white"
+                            >
+                                <option value="10">$10</option>
+                                <option value="20">$20</option>
+                                <option value="50">$50</option>
+                                <option value="100">$100</option>
+                            </select>
+                        </div>
                     </div>
 
                     <button
@@ -145,6 +176,18 @@ export default function DiceGame() {
                     )
                 )}
             </div>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+            />
         </div>
     );
 }
