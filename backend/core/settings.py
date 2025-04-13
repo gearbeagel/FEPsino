@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 
     'user.apps.UserConfig',
     'blackjack.apps.BlackjackConfig',
