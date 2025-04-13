@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, vi, beforeEach, expect } from "vitest";
-import "@testing-library/jest-dom"; // Add Jest DOM matchers
-import SignUpIn from "./SignUpIn"; // Adjust the import path if needed
+import "@testing-library/jest-dom";
+import SignUpIn from "./SignUpIn";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 

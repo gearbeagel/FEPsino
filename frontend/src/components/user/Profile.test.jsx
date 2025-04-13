@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Profile from './Profile';
 import fetchUser from './UserApi.jsx';
 import { describe, it, vi, beforeEach, expect, afterEach } from "vitest";
+import React from 'react';
 
 vi.mock('./UserApi.jsx');
 

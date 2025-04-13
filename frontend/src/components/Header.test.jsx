@@ -3,6 +3,7 @@ import { describe, it, vi, beforeEach, expect } from 'vitest';
 import Header from './Header';
 import fetchUser from './user/UserApi.jsx';
 import { MemoryRouter } from 'react-router-dom';
+import React from 'react';
 
 vi.mock('./user/UserApi.jsx');
 

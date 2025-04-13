@@ -1,12 +1,19 @@
-/// <reference types="vitest" />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-    plugins: [react()],
     test: {
-        globals: true,
-        environment: 'jsdom',
-        setupFiles: './setupTests.js', // path to setup file
+        globals: true, // <-- enables global expect, test, describe, etc.
+        environment: 'jsdom', // <-- simulates the DOM for React components
+        setupFiles: './setupTests.js',
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'lcov', 'json'],
+            reportsDirectory: './coverage',
+        },
+        reporters: ['default', 'vitest-sonar-reporter'],
+        outputFile: {
+            json: 'my-json-report.json',
+            'vitest-sonar-reporter': 'testResults/sonar-report.xml',
+        },
     },
 });

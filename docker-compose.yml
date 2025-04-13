@@ -75,7 +75,7 @@ services:
       - sonarqube
     command: >
       sh -c "./backend/scripts/wait-for-sonar.sh sonarqube:9000 -- 
-             sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME -Dsonar.exclusions=**/node_modules/** -Dsonar.tests=frontend/src"
+             sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME -Dsonar.exclusions=**/node_modules/** -Dsonar.testExecutionReportPaths=frontend/testResults/sonar-report.xml"
     restart: "no"
     networks:
       - default

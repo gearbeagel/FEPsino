@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import fetchUser from "./UserApi.jsx";
 import { Banknote, DollarSign, Mail, Pencil, User2, User } from "lucide-react";
+import React from "react";
 
 export default function Profile() {
     const [user, setUser] = useState(null);
