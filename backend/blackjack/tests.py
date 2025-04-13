@@ -184,34 +184,67 @@ class TestBlackjackGameFacade(unittest.TestCase):
 
     def test_player_hit_success(self):
         """Test player hitting when the game is in progress."""
-
         self.facade.deal_cards(self.session)
 
 
         game_mock = Mock()
-        game_mock.player_hit.return_value = None
-        game_mock.get_game_state.return_value = {'player_hand': [], 'dealer_hand': [], 'game_over': False}
+        game_mock.player_hit.return_value = "Card dealt successfully."
+        game_mock.get_game_state.return_value = {
+            'player_hand': [{'rank': 'A', 'suit': 'H'}],
+            'dealer_hand': [{'rank': 'K', 'suit': 'S'}],
+            'game_over': False
+        }
 
-        with patch.object(self.facade, '_restore_game_from_session', return_value=game_mock):
+
+        serializer_mock = Mock()
+        serializer_mock.is_valid.return_value = True
+
+
+        with patch.object(self.facade, '_restore_game_from_session', return_value=game_mock), \
+                patch('blackjack.facade.GameStateSerializer', return_value=serializer_mock):
+
             result = self.facade.player_hit(self.session)
-            self.assertIsNone(result.get('message'))
+
+
+            self.assertEqual(result['message'], "Card dealt successfully.")
+            self.assertFalse(result['game_state']['game_over'])
+            game_mock.player_hit.assert_called_once()
 
     def test_player_stay_dealer_wins(self):
-
         """Test player staying when the dealer wins."""
 
         self.facade.deal_cards(self.session)
         self.session['bet'] = 100
 
 
+        initial_balance = self.facade.get_current_balance()
+
+
         game_mock = Mock()
         game_mock.dealer_play.return_value = "Dealer wins!"
-        game_mock.get_game_state.return_value = {'player_hand': [], 'dealer_hand': [], 'game_over': True}
+        game_mock.get_game_state.return_value = {
+            'player_hand': [{'rank': 'J', 'suit': 'C'}, {'rank': '8', 'suit': 'D'}],
+            'dealer_hand': [{'rank': 'K', 'suit': 'H'}, {'rank': 'Q', 'suit': 'S'}],
+            'game_over': True
+        }
 
-        with patch.object(self.facade, '_restore_game_from_session', return_value=game_mock):
+
+        serializer_mock = Mock()
+        serializer_mock.is_valid.return_value = True
+
+
+        with patch.object(self.facade, '_restore_game_from_session', return_value=game_mock), \
+                patch('blackjack.facade.GameStateSerializer', return_value=serializer_mock):
+
             result = self.facade.player_stay(self.session)
+
+
             self.assertEqual(result['message'], "Dealer wins!")
             self.assertEqual(result['bet'], 0)
+            self.assertTrue(result['game_state']['game_over'])
+            self.assertEqual(result['balance'], initial_balance)
+            game_mock.dealer_play.assert_called_once()
+
 
     def test_place_bet_success(self):
 

@@ -1,6 +1,6 @@
-from user.models import User
 from .game_logic import BlackjackGame, Card
-
+from .serializers import GameStateSerializer, BetSerializer, CardSerializer
+from rest_framework.exceptions import ValidationError
 
 
 # REFACTORING: Introduce Parameter Object
@@ -35,6 +35,7 @@ class BlackjackGameFacade:
     """
     Facade pattern that provides a simplified interface to the BlackjackGame.
     Manages game state persistence in session and handles user profile interactions.
+    Uses serializers for data validation.
     """
 
     def __init__(self, user):
@@ -53,6 +54,7 @@ class BlackjackGameFacade:
     def get_game_state(self, session):
         """
         Retrieves or initializes the game state from session.
+        Uses serializer to validate the game state.
         """
         game_state = session.get('game')
         bet = session.get('bet', 0)
@@ -60,7 +62,18 @@ class BlackjackGameFacade:
         if not game_state:
             # REFACTORING: Extract Method - create a new helper method for initialization
             game_state = self._initialize_new_game(session)
+        else:
 
+            serializer = GameStateSerializer(data=game_state)
+            if not serializer.is_valid():
+
+                game_state = self._initialize_new_game(session)
+
+
+        bet_serializer = BetSerializer(data={'amount': bet})
+        if not bet_serializer.is_valid():
+            session['bet'] = 0
+            bet = 0
 
         return GameResult(
             game_state,
@@ -71,13 +84,23 @@ class BlackjackGameFacade:
     def _initialize_new_game(self, session):
         """
         Creates a new game instance with initial dealer card.
+        Ensures the game state is properly serialized.
         """
         # REFACTORING: Extract Method - improves readability by breaking down complex method
         game = BlackjackGame()
         game.create_deck()
         game.dealer_hand = [game.deal_card()]
-        session['game'] = game.get_game_state()
-        return session['game']
+
+        game_state = game.get_game_state()
+
+
+        serializer = GameStateSerializer(data=game_state)
+        if serializer.is_valid():
+            session['game'] = game_state
+            return session['game']
+        else:
+
+            raise ValidationError("Failed to create a valid game state")
 
     def start_new_game(self, session):
         """
@@ -87,7 +110,6 @@ class BlackjackGameFacade:
         game_state = session.get('game')
 
         if game_state and not game_state.get('game_over', True):
-
             return GameResult(
                 game_state,
                 self.get_current_balance(),
@@ -97,7 +119,6 @@ class BlackjackGameFacade:
 
         new_game_state = self._initialize_new_game(session)
         session['bet'] = 0
-
 
         return GameResult(
             new_game_state,
@@ -111,7 +132,6 @@ class BlackjackGameFacade:
         Deals initial cards to player and dealer at the start of a game.
         """
         if 'game' in session and session['game'].get('game_over', False):
-
             return GameResult(
                 session['game'],
                 self.get_current_balance(),
@@ -126,7 +146,6 @@ class BlackjackGameFacade:
             # REFACTORING: Extract Method
             game = self._restore_game_from_session(session)
 
-
             # REFACTORING: Simplify Conditional Expression
             if not game.game_over and not game.player_hand:
                 for _ in range(2):
@@ -137,7 +156,6 @@ class BlackjackGameFacade:
 
         # REFACTORING: Extract Method
         self._save_game_to_session(session, game)
-
 
         return GameResult(
             session['game'],
@@ -158,19 +176,49 @@ class BlackjackGameFacade:
     def _restore_game_from_session(self, session):
         """
         Restores a BlackjackGame instance from session data.
+        Uses card serializer to validate card data.
         """
         # REFACTORING: Extract Method
         game_state = session['game']
+
+
+        game_serializer = GameStateSerializer(data=game_state)
+        if not game_serializer.is_valid():
+            raise ValidationError("Invalid game state in session")
+
         game = BlackjackGame()
 
         # REFACTORING: Simplify Conditional Expression
         if 'deck' in game_state:
-            game.deck = [Card(**card) for card in game_state['deck']]
+
+            cards = []
+            for card_data in game_state['deck']:
+                card_serializer = CardSerializer(data=card_data)
+                if card_serializer.is_valid():
+                    cards.append(Card(**card_serializer.validated_data))
+            game.deck = cards
         else:
             game.create_deck()
 
-        game.player_hand = [Card(**card) for card in game_state['player_hand']]
-        game.dealer_hand = [Card(**card) for card in game_state['dealer_hand']]
+
+        player_cards = []
+        for card_data in game_state['player_hand']:
+            card_serializer = CardSerializer(data=card_data)
+            if card_serializer.is_valid():
+                player_cards.append(Card(**card_serializer.validated_data))
+        game.player_hand = player_cards
+
+
+        dealer_cards = []
+        for card_data in game_state['dealer_hand']:
+
+            if card_data.get('rank') == '?' and card_data.get('suit') == '?':
+                continue
+            card_serializer = CardSerializer(data=card_data)
+            if card_serializer.is_valid():
+                dealer_cards.append(Card(**card_serializer.validated_data))
+        game.dealer_hand = dealer_cards
+
         game.game_over = game_state['game_over']
 
         return game
@@ -178,16 +226,23 @@ class BlackjackGameFacade:
     def _save_game_to_session(self, session, game):
         """
         Saves the current game state to the session.
+        Validates the game state with serializer before saving.
         """
         # REFACTORING: Extract Method
-        session['game'] = game.get_game_state()
+        game_state = game.get_game_state()
+
+
+        serializer = GameStateSerializer(data=game_state)
+        if serializer.is_valid():
+            session['game'] = game_state
+        else:
+            raise ValidationError("Failed to create a valid game state")
 
     def player_hit(self, session):
         """
         Processes a player's request to hit (get another card).
         """
         if 'game' in session and session['game'].get('game_over', False):
-
             return GameResult(
                 session['game'],
                 self.get_current_balance(),
@@ -213,7 +268,6 @@ class BlackjackGameFacade:
             bet = session.get('bet', 0)
             self._update_balance(-bet)
             session['bet'] = 0
-
 
         return GameResult(
             session['game'],
@@ -251,16 +305,12 @@ class BlackjackGameFacade:
         # REFACTORING: Extract Method
         bet = session.get('bet', 0)
 
-
         if "You win" in result:
             self._update_balance(bet * 2)
         elif "tie" in result.lower():
             self._update_balance(bet)
 
-
-
         session['bet'] = 0
-
 
         return GameResult(
             session['game'],
@@ -272,6 +322,7 @@ class BlackjackGameFacade:
     def place_bet(self, session, amount):
         """
         Places a bet of the specified amount.
+        Uses BetSerializer to validate the bet amount.
         """
         # REFACTORING: Replace Nested Conditional with Guard Clauses
         if 'game' in session and session['game'].get('game_over', False):
@@ -282,7 +333,18 @@ class BlackjackGameFacade:
                 "Game is over. Please start a new game before placing bets."
             ).to_dict()
 
-        amount = int(amount)
+
+        bet_serializer = BetSerializer(data={'amount': amount})
+        if not bet_serializer.is_valid():
+            return GameResult(
+                session.get('game'),
+                self.get_current_balance(),
+                session.get('bet', 0),
+                "Invalid bet amount."
+            ).to_dict()
+
+
+        amount = bet_serializer.validated_data['amount']
         current_bet = session.get('bet', 0)
 
         # REFACTORING: Replace Nested Conditional with Guard Clauses
@@ -292,7 +354,6 @@ class BlackjackGameFacade:
         elif self.get_current_balance() >= amount:  # REFACTORING: Replace Temporary Variable with Query
             session['bet'] = current_bet + amount
             self._update_balance(-amount)
-
 
         return GameResult(
             session.get('game'),
@@ -308,4 +369,3 @@ class BlackjackGameFacade:
         # REFACTORING: Extract Method
         self.profile.balance += amount
         self.profile.save()
-
