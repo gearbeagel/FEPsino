@@ -4,7 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .facade import BlackjackGameFacade
 from .serializers import BetSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
+authentication_classes = [JWTAuthentication]
 """Views for the Blackjack game app."""
 
 class GameStateView(APIView):
