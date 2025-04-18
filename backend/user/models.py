@@ -10,8 +10,6 @@ from django.db import models
 from core import settings
 from user.utils import generate_random_username
 
-logger = logging.getLogger(__name__)
-
 
 class UserManager(BaseUserManager):
     """Manager for users."""
@@ -19,23 +17,19 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """Create, save and return a new user"""
         if not email:
-            logger.error('Attempted to create a user without an email.')
             raise ValueError('User must have an email')
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-        logger.info('New user created.')
 
         return user
 
     def create_superuser(self, email, password):
         """Create, save and return a new superuser."""
-        logger.info('Creating superuser')
         user = self.create_user(email, password)
         user.is_staff = True
         user.is_superuser = True
         user.save(using=self._db)
-        logger.info('Superuser created.')
 
         return user
 
