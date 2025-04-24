@@ -4,9 +4,8 @@
 1. Added favicon and changed the title of the page.
 2. Fixed the issue when logging in with a new user, the page was not redirecting to the home page.
 3. Redesigned the profile page.
-4. Centered the icon in the nav, remove the home icon.
+4. Centered the icon in the nav, removed the home icon.
 5. Added log out button in the profile.
-6. Removed the ability to bet in the Dice Game, since the value is preset.
 
 
 ## Refactoring Changes
@@ -51,7 +50,7 @@
 
 ## Refactoring Techniques Used
 
-1. **Extract Method**: Moved duplicate or complex inline logic into a separate, named function to improve code readability, reusability, and maintainability.
+### 1. **Extract Method**: Moved duplicate or complex inline logic into a separate, named function to improve code readability, reusability, and maintainability.
 
 Before:
 
@@ -61,7 +60,7 @@ Before:
 {diceType2 === 'd6' ? diceD6(6) : diceType2 === 'd8' ? diceD8(8) : diceD12(12)}
 
 ```
-After
+After:
 ```javascript
 {getDiceComponent(diceType1, diceValue1)}
 ...
@@ -87,7 +86,8 @@ const getInitDiceComponent = (diceType) => {
 }
 };
 ```
-2. **Replace Magic Number with Symbolic Constant**: replaced hard-coded values with named constants to improve code clarity and maintainability.
+### 2. **Replace Magic Number with Symbolic Constant**: replaced hard-coded values with named constants to improve code clarity and maintainability.
+
 Before:
 ```javascript
 const generateReels = () => {
@@ -107,7 +107,8 @@ const generateReels = () => {
     );
 }
 ```
-3. **Encapsulate Collection**: access collection logic through functions/methods.
+### 3. **Encapsulate Collection**: access collection logic through functions/methods.
+
 Before: 
 ```javascript
 setReels(Array(5).fill().map(() => Array(3).fill().map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])));
@@ -123,8 +124,9 @@ export const getRandomReels = (max) => {
 setReels(generateReels());
 ```
 
-4. **Extract Class**: encapsulate deck logic in a dedicated class.
-   Before:
+### 4. **Extract Class**: encapsulate deck logic in a dedicated class.
+
+Before:
 ```javascript
 function createDeck() {
     return suitsArray.flatMap(suit => values.map(({ name, value }) => ({ suit, name, value })));
@@ -144,6 +146,7 @@ function drawCard() {
     return deck.pop();
 }
 ```
+
 After (gameApi.jsx):
 ```javascript
 export class Deck {
@@ -180,23 +183,25 @@ export class Deck {
     }
 
 ```
+
 Usage in component:
 ```javascript
 const [deck, setDeck] = useState(new Deck());
 ...
 const card = deck.draw();
 ```
-5. **Remove Dead Code**: eliminate redundant or unused code.
+
+### 5. **Remove Dead Code**: eliminate redundant or unused code.
 
 Removed Code:
 ```javascript
 {error && <div className="text-red-500">{error}</div>}
 ```
 Since I am displaying error messages using `react-toastify`, this line was unnecessary and cluttered the UI.
-6. **Replace Temp with Query**: remove intermediate variables and directly query calculations when needed.
+
+### 6. **Replace Temp with Query**: remove intermediate variables and directly query calculations when needed.
    
 Before:
-
 ```javascript
 const playerValue = calculateHandValue(playerHand);
 ...
@@ -205,13 +210,12 @@ if (playerValue > 21) {
 }
 ```
 After:
-
 ```javascript
 if (calculateHandValue(playerHand) > 21) {
 ...
 }
 ```
-7. **Rename Variable**: improved variable names for clarity and understanding.
+### 7. **Rename Variable**: improved variable names for clarity and understanding.
 
 Before:
 ```javascript
@@ -223,7 +227,8 @@ After:
 const response = await fetchUser();
 const updatedUser = await response.json();
 ```
-8. **Separate Query from Modifier**: separate data retrieval and modification logic for better clarity and maintainability.
+### 8. **Separate Query from Modifier**: separate data retrieval and modification logic for better clarity and maintainability.
+
 Before:
 ```javascript
 const handleEdit = async (e) => {
@@ -249,7 +254,8 @@ const handleEdit = async (e) => {
    }
 }
 ```
-9. **Consolidate Conditional Expressions**: simplified complex conditional expressions for better readability and maintainability.
+### 9. **Consolidate Conditional Expressions**: simplified complex conditional expressions for better readability and maintainability.
+
 Before:
 ```javascript
 {isSignUp && (
@@ -288,7 +294,8 @@ const ConfirmPasswordField = () => (
 
 {isSignUp && <ConfirmPasswordField />}
 ```
-10. **Replace Conditional with Polymorphism**: used polymorphism to render dice.
+### 10. **Replace Conditional with Polymorphism**: used polymorphism to render dice.
+
 Before:
 ```javascript
 const diceSVG = (diceValue, points) => (
@@ -319,6 +326,7 @@ const diceD12 = (v) => diceSVG(v, "50,10 90,30 90,70 50,90 10,70 10,30");
 {diceType2 === 'd6' ? diceD6(diceValue2) : diceType2 === 'd8' ? diceD8(diceValue2) : diceD12(diceValue2)}
 </motion.div>
 ```
+
 After:
 ```javascript
 const DICE_SHAPES = {
