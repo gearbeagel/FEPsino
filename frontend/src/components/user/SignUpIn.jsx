@@ -24,6 +24,25 @@ AuthButton.propTypes = {
     children: PropTypes.node.isRequired,
 };
 
+const ConfirmPasswordField = ({ confirmPassword, setConfirmPassword }) => (
+    <>
+        <label htmlFor="confirmPassword" className="text-sm my-3">Confirm Password:</label>
+        <input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+    </>
+);
+
+ConfirmPasswordField.propTypes = {
+    confirmPassword: PropTypes.string.isRequired,
+    setConfirmPassword: PropTypes.func.isRequired,
+}
+
 export default function SignUpIn() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -120,21 +139,7 @@ export default function SignUpIn() {
                             data-testid="password-input"
                         />
 
-                        {isSignUp && (
-                            <>
-                                <label htmlFor="confirmPassword" className="text-sm my-3">Confirm Password:</label>
-                                <input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type="password"
-                                    required
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-gray-700 rounded p-2 text-white"
-                                    data-testid="confirm-password-input"
-                                />
-                            </>
-                        )}
+                        {isSignUp && <ConfirmPasswordField confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword}/>}
 
                         <div className="flex flex-col items-center">
                             <div className="text-sm text-gray-400 mt-4">

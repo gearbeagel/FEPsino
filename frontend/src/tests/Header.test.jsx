@@ -1,11 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, vi, beforeEach, expect } from 'vitest';
-import Header from './Header';
-import fetchUser from './user/UserApi.jsx';
+import Header from '../components/Header.jsx';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
-vi.mock('./user/UserApi.jsx');
+// Fix the mock path to match the actual import in your Header component
+vi.mock('../components/user/UserApi.jsx', () => ({
+    default: vi.fn()
+}));
 
 describe('Header Component', () => {
     beforeEach(() => {
@@ -13,7 +15,9 @@ describe('Header Component', () => {
     });
 
     it('renders the site title', async () => {
+        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
         fetchUser.mockResolvedValue(null);
+
         render(<Header />, { wrapper: MemoryRouter });
 
         await waitFor(() => {
@@ -22,6 +26,7 @@ describe('Header Component', () => {
     });
 
     it('shows Login / Sign Up button if user not logged in', async () => {
+        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
         fetchUser.mockResolvedValue(null);
 
         render(<Header />, { wrapper: MemoryRouter });
@@ -32,6 +37,7 @@ describe('Header Component', () => {
     });
 
     it('shows user email when logged in', async () => {
+        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
         const mockUser = { email: 'test@example.com' };
         fetchUser.mockResolvedValue(mockUser);
 
@@ -43,6 +49,7 @@ describe('Header Component', () => {
     });
 
     it('renders About link', async () => {
+        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
         fetchUser.mockResolvedValue(null);
 
         render(<Header />, { wrapper: MemoryRouter });

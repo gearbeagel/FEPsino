@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, test, beforeEach, expect } from "vitest";
-import Home from "./Home";
+import Home from "../components/Home.jsx";
 
 describe("Home Component", () => {
     beforeEach(() => {

@@ -196,3 +196,8 @@ dist-ssr
 *.sw?
 /backend/.scannerwork/.sonar_lock
 /backend/.scannerwork/report-task.txt
+
+*.scannerwork
+*coverage
+*testResults
+*__snapshots__

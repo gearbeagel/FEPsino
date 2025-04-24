@@ -10,6 +10,10 @@ const SYMBOLS = [
   { id: 'citrus', component: <CitrusIcon className="h-12 w-12 text-yellow-400" /> },
 ];
 
+const NUM_COLUMNS = 5;
+const NUM_ROWS = 3;
+const MAX_SHUFFLES = 20;
+
 export default function SlotsGame() {
   const [reels, setReels] = useState(Array(5).fill(Array(3).fill(SYMBOLS[0])));
   const [isSpinning, setIsSpinning] = useState(false);
@@ -49,8 +53,8 @@ export default function SlotsGame() {
 
   const generateReels = () => {
 
-    return Array(5).fill().map(() =>
-        Array(3).fill().map(() => SYMBOLS[getRandomReels(SYMBOLS.length)])
+    return Array(NUM_COLUMNS).fill().map(() =>
+        Array(NUM_COLUMNS).fill().map(() => SYMBOLS[getRandomReels(SYMBOLS.length)])
     );
   };
 
@@ -69,13 +73,12 @@ export default function SlotsGame() {
     setBalance(prev => prev - bet);
 
     let shuffleCount = 0;
-    const maxShuffles = 20;
 
     const spinInterval = setInterval(() => {
       setReels(generateReels());
 
       shuffleCount++;
-      if (shuffleCount >= maxShuffles) {
+      if (shuffleCount >= MAX_SHUFFLES) {
         clearInterval(spinInterval);
         handleSpinEnd(generateReels());
       }

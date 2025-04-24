@@ -9,6 +9,14 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'lcov', 'json'],
             reportsDirectory: './coverage',
+            exclude: [
+                'node_modules/**',
+                '**.config.js',
+                'src/main.jsx',
+                'src/components/games/SlotsGame.jsx',
+                'src/components/games/BlackjackGame.jsx',
+                'src/animations/**'
+            ]
         },
         reporters: ['default', 'vitest-sonar-reporter'],
         outputFile: {

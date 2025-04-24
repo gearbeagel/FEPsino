@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, vi, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";
-import SignUpIn from "./SignUpIn";
+import SignUpIn from "../components/user/SignUpIn.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 

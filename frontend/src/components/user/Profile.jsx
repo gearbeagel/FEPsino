@@ -10,8 +10,8 @@ export default function Profile() {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const res = await fetchUser();
-                setUser(res);
+                const response = await fetchUser();
+                setUser(response);
             } catch (err) {
                 console.error('Error fetching user:', err);
             }
@@ -20,28 +20,32 @@ export default function Profile() {
         getUser();
     }, []);
 
+    const fetchUpdatedUser = async (user) => {
+        const response = await fetch(`${apiUrl}/user/update/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify(user)
+        });
+
+        if (!response.ok) throw new Error('Failed to update user profile');
+
+        return await response.json();
+    };
+
     const handleEdit = async (e) => {
         e.preventDefault();
 
         try {
-            const res = await fetch(`${apiUrl}/user/update/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                },
-                body: JSON.stringify(user)
-            });
-
-            if (!res.ok) throw new Error('Failed to update user profile');
-
-            const data = await res.json();
-            setUser(data);
+            const updatedUser = await fetchUpdatedUser(user);
+            setUser(updatedUser);
             setIsEditing(false);
         } catch (err) {
             console.log(err.message);
         }
-    }
+    };
 
     const apiUrl = import.meta.env.VITE_API_URL;
 
