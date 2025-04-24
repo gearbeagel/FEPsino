@@ -1,51 +1,51 @@
 import { useEffect, useState } from "react";
 import fetchUser from "./UserApi.jsx";
 import { Banknote, DollarSign, Mail, Pencil, User2, User } from "lucide-react";
+import React from "react";
 
 export default function Profile() {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
             try {
-                const res = await fetchUser();
-                setUser(res);
+                const response = await fetchUser();
+                setUser(response);
             } catch (err) {
                 console.error('Error fetching user:', err);
-            } finally {
-                setLoading(false);
             }
         };
 
         getUser();
     }, []);
 
+    const fetchUpdatedUser = async (user) => {
+        const response = await fetch(`${apiUrl}/user/update/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify(user)
+        });
+
+        if (!response.ok) throw new Error('Failed to update user profile');
+
+        return await response.json();
+    };
+
     const handleEdit = async (e) => {
         e.preventDefault();
-        setError(null);
 
         try {
-            const res = await fetch(`${apiUrl}/user/update/`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                },
-                body: JSON.stringify(user)
-            });
-
-            if (!res.ok) throw new Error('Failed to update user profile');
-
-            const data = await res.json();
-            setUser(data);
+            const updatedUser = await fetchUpdatedUser(user);
+            setUser(updatedUser);
             setIsEditing(false);
         } catch (err) {
-            setError(err.message);
+            console.log(err.message);
         }
-    }
+    };
 
     const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -77,7 +77,7 @@ export default function Profile() {
                         <User2 className="h-6 w-6 text-black mr-2"/>Log out</button>
                 </div>
                 { isEditing &&
-                    <form onSubmit={handleEdit} className="flex flex-col gap-4 mt-6">
+                    <form onSubmit={handleEdit} data-testid="edit-form" className="flex flex-col gap-4 mt-6">
                         <label className="block text-sm mb-1">Old Password</label>
                         <input
                             type="password"
