@@ -1,45 +1,33 @@
 from rest_framework import serializers
 from .models import Spin, Symbol
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
-        read_only_fields = ['id']
-
-
-class SymbolSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Symbol
-        fields = ['id', 'name', 'image_path']
-
+        fields = ['id', 'email', 'balance', 'total_wager', 'total_won']
+        read_only_fields = ['id', 'balance', 'total_wager', 'total_won']
 
 class SpinSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Spin
-        fields = ['id', 'user', 'bet_amount', 'payout', 'result', 'win_data', 'timestamp']
+        fields = ['__all__']
         read_only_fields = ['id', 'user', 'payout', 'result', 'win_data', 'timestamp']
 
 
 class SpinRequestSerializer(serializers.Serializer):
-    bet_size = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+    bet_amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01, max_value=1000.00)
 
+    def validate_bet_amount(self, value):
+        """
+        Check if bet amount is within allowed limits and if user has sufficient balance.
+        """
+        user = self.context['request'].user
+        if hasattr(user, 'balance') and user.balance < value:
+            raise serializers.ValidationError("Insufficient balance.")
 
-class RegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            password=validated_data['password']
-        )
-        return user
+        return value

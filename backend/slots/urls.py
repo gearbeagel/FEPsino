@@ -7,7 +7,6 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user')
 router.register(r'spins', SpinViewSet, basename='spin')
 router.register(r'symbols', SymbolViewSet, basename='symbol')
 

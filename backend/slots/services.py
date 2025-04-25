@@ -1,12 +1,16 @@
 import random
 from decimal import Decimal
-from django.contrib.auth.models import User
+from .models import Symbol
+from .models import Spin
+
+from user.models import UserManager
 
 
 class ReelService:
+    MIN_SYMBOLS_FOR_WIN = 2
+
     def __init__(self, symbols):
         self.symbols = symbols
-        # Map frontend icon indexes to backend symbol names
         self.frontend_symbol_map = {
             0: 'star',  # Star icon
             1: 'heart',  # Heart icon
@@ -14,16 +18,13 @@ class ReelService:
             3: 'gem',  # Gem icon
             4: 'citrus',  # Citrus icon
         }
-        # Reverse mapping for converting backend to frontend
         self.backend_symbol_map = {v: k for k, v in self.frontend_symbol_map.items()}
 
     def generate_spin(self, num_reels=5, visible_rows=3):
         """Generate a random spin result with 5 reels and 3 visible symbols per reel."""
         result = {}
         for reel in range(num_reels):
-            # Select random symbols for this reel
             shuffled_symbols = random.sample(list(self.symbols), len(self.symbols))
-            # Store the symbols with their frontend index values
             result[reel] = [self.backend_symbol_map.get(shuffled_symbols[i].name, i) for i in range(visible_rows)]
         return result
 
@@ -69,20 +70,18 @@ class ReelService:
 
         for row in horizontal:
             for sym in row:
-                if row.count(sym) > 2:  # Potential win
+                if row.count(sym) > self.MIN_SYMBOLS_FOR_WIN:
                     possible_win = [idx for idx, val in enumerate(row) if sym == val]
 
-                    # Check possible_win for a subsequence longer than 2 and add to hits
                     longest = self.longest_seq(possible_win)
-                    if len(longest) > 2:
-                        # Convert numeric symbol index to symbol name for database lookups
+                    if len(longest) > self.MIN_SYMBOLS_FOR_WIN:
                         symbol_name = self.frontend_symbol_map.get(sym, f"symbol_{sym}")
                         hits[horizontal.index(row) + 1] = [symbol_name, longest]
 
         return hits if hits else None
 
-    def calculate_payout(self, win_data, bet_size):
-        """Calculate payout based on win data and bet size."""
+    def calculate_payout(self, win_data, bet_amount):
+        """Calculate payout based on win data and bet amount."""
         if not win_data:
             return Decimal('0.00')
 
@@ -91,32 +90,37 @@ class ReelService:
 
         for row_number, win_info in win_data.items():
             sym_name, indices = win_info
-
-            # Get the corresponding symbol from database
             try:
                 symbol = Symbol.objects.get(name=sym_name)
                 combo_length = len(indices)
-                total_payout += Decimal(bet_size) * combo_length * symbol.payout_multiplier
+                total_payout += Decimal(bet_amount) * combo_length * symbol.payout_multiplier
             except Symbol.DoesNotExist:
-                # Use default multiplier if symbol not found
                 combo_length = len(indices)
                 default_multiplier = Decimal('1.0')
-                total_payout += Decimal(bet_size) * combo_length * default_multiplier
+                total_payout += Decimal(bet_amount) * combo_length * default_multiplier
 
         return total_payout
 
 
 class SlotMachineService:
     def __init__(self):
-        from .models import Symbol
         symbols = Symbol.objects.all()
         self.reel_service = ReelService(symbols)
+        self.user = UserManager()
 
-    def play_spin(self, user, bet_size):
+    def play_spin(self, user, bet_amount):
         """Process a single spin of the slot machine."""
-        # Direct user balance management
-        # This needs to be handled differently since we no longer have a Player model
-        # For simplicity, we'll use a session-based approach for this example
+        # Check if the user has sufficient balance
+        if user.balance < Decimal(bet_amount):
+            return {
+                'success': False,
+                'message': 'Insufficient balance'
+            }
+
+        # Update the user's balance by subtracting the bet amount
+        user.balance -= Decimal(bet_amount)
+        user.total_wager += Decimal(bet_amount)
+        user.save()
 
         # Generate spin result
         result = self.reel_service.generate_spin()
@@ -125,16 +129,18 @@ class SlotMachineService:
         win_data = self.reel_service.check_wins(result)
         payout = Decimal('0.00')
 
-        # Calculate payout if there's a win
+        # Calculate and process payout if there's a win
         if win_data:
-            payout = self.reel_service.calculate_payout(win_data, bet_size)
+            payout = self.reel_service.calculate_payout(win_data, bet_amount)
+            # Update the user's balance by adding the payout
+            user.balance += payout
+            user.total_won += payout
+            user.save()
 
         # Create and return the spin record
-        from .models import Spin
-
         spin = Spin.objects.create(
             user=user,
-            bet_amount=bet_size,
+            bet_amount=bet_amount,
             payout=payout,
             result=result,
             win_data=win_data
@@ -145,5 +151,6 @@ class SlotMachineService:
             'spin_id': spin.id,
             'result': result,
             'win_data': win_data,
-            'payout': payout
+            'payout': payout,
+            'current_balance': float(user.balance)
         }
