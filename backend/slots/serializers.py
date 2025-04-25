@@ -10,12 +10,18 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'balance', 'total_wager', 'total_won']
         read_only_fields = ['id', 'balance', 'total_wager', 'total_won']
 
+class SymbolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Symbol
+        fields = ['id', 'name', 'payout_multiplier']
+        read_only_fields = ['id', 'name', 'payout_multiplier']
+
 class SpinSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Spin
-        fields = ['__all__']
+        fields = '__all__'
         read_only_fields = ['id', 'user', 'payout', 'result', 'win_data', 'timestamp']
 
 
