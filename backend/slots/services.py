@@ -110,34 +110,27 @@ class SlotMachineService:
 
     def play_spin(self, user, bet_amount):
         """Process a single spin of the slot machine."""
-        # Check if the user has sufficient balance
         if user.balance < Decimal(bet_amount):
             return {
                 'success': False,
                 'message': 'Insufficient balance'
             }
 
-        # Update the user's balance by subtracting the bet amount
         user.balance -= Decimal(bet_amount)
         user.total_wager += Decimal(bet_amount)
         user.save()
 
-        # Generate spin result
         result = self.reel_service.generate_spin()
 
-        # Check for wins
         win_data = self.reel_service.check_wins(result)
         payout = Decimal('0.00')
 
-        # Calculate and process payout if there's a win
         if win_data:
             payout = self.reel_service.calculate_payout(win_data, bet_amount)
-            # Update the user's balance by adding the payout
             user.balance += payout
             user.total_won += payout
             user.save()
 
-        # Create and return the spin record
         spin = Spin.objects.create(
             user=user,
             bet_amount=bet_amount,

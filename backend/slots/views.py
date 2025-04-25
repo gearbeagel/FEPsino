@@ -30,15 +30,9 @@ class SpinViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         bet_amount = serializer.validated_data['bet_amount']
-
-        # Get the current user
         user = request.user
-
-        # Create the spin
         slot_machine = SlotMachineService()
         result = slot_machine.play_spin(user, bet_amount)
-
-        # Return the spin result in format compatible with frontend
         return Response(result)
 
     @extend_schema(
@@ -48,8 +42,6 @@ class SpinViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'])
     def history(self, request):
         spins = Spin.objects.filter(user=request.user).order_by('-timestamp')
-
-        # Optional pagination could be added here
         serializer = self.get_serializer(spins, many=True)
         return Response(serializer.data)
 
