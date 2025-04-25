@@ -1,10 +1,11 @@
 from .game_logic import BlackjackGame, Card
 from .serializers import GameStateSerializer, BetSerializer, CardSerializer
+from .models import GameHistory
 from rest_framework.exceptions import ValidationError
+from user.models import User
+import json
 
 
-# REFACTORING: Introduce Parameter Object
-# REFACTORING: Extract Class
 class GameResult:
     """
     An object representing the result of a game action.
@@ -34,41 +35,35 @@ class GameResult:
 class BlackjackGameFacade:
     """
     Facade pattern that provides a simplified interface to the BlackjackGame.
-    Manages game state persistence in session and handles user profile interactions.
-    Uses serializers for data validation.
+
     """
 
     def __init__(self, user):
         self.user = user
-        # REFACTORING: Extract Mock Object - separating test code from production code
-        self.profile = type('obj', (object,), {'balance': 1000, 'save': lambda: None})
 
-    # REFACTORING: Replace Temporary Variable with Query
-    # REFACTORING: Encapsulate Field
+        self.user.refresh_from_db()
+
     def get_current_balance(self):
         """
-        Returns the current balance of the user profile.
+        Returns the current coin balance of the user.
         """
-        return self.profile.balance
+
+        self.user.refresh_from_db()
+        return self.user.coin_balance
 
     def get_game_state(self, session):
         """
         Retrieves or initializes the game state from session.
-        Uses serializer to validate the game state.
         """
         game_state = session.get('game')
         bet = session.get('bet', 0)
 
         if not game_state:
-            # REFACTORING: Extract Method - create a new helper method for initialization
             game_state = self._initialize_new_game(session)
         else:
-
             serializer = GameStateSerializer(data=game_state)
             if not serializer.is_valid():
-
                 game_state = self._initialize_new_game(session)
-
 
         bet_serializer = BetSerializer(data={'amount': bet})
         if not bet_serializer.is_valid():
@@ -84,28 +79,23 @@ class BlackjackGameFacade:
     def _initialize_new_game(self, session):
         """
         Creates a new game instance with initial dealer card.
-        Ensures the game state is properly serialized.
         """
-        # REFACTORING: Extract Method - improves readability by breaking down complex method
         game = BlackjackGame()
         game.create_deck()
         game.dealer_hand = [game.deal_card()]
 
         game_state = game.get_game_state()
 
-
         serializer = GameStateSerializer(data=game_state)
         if serializer.is_valid():
             session['game'] = game_state
             return session['game']
         else:
-
             raise ValidationError("Failed to create a valid game state")
 
     def start_new_game(self, session):
         """
         Resets the game state and returns a fresh game state.
-        Only allowed when no game is in progress or current game is over.
         """
         game_state = session.get('game')
 
@@ -140,13 +130,10 @@ class BlackjackGameFacade:
             ).to_dict()
 
         if 'game' not in session:
-            # REFACTORING: Extract Method
             game = self._create_new_game_instance()
         else:
-            # REFACTORING: Extract Method
             game = self._restore_game_from_session(session)
 
-            # REFACTORING: Simplify Conditional Expression
             if not game.game_over and not game.player_hand:
                 for _ in range(2):
                     game.player_hand.append(game.deal_card())
@@ -154,7 +141,6 @@ class BlackjackGameFacade:
                 if not game.dealer_hand:
                     game.dealer_hand.append(game.deal_card())
 
-        # REFACTORING: Extract Method
         self._save_game_to_session(session, game)
 
         return GameResult(
@@ -167,7 +153,6 @@ class BlackjackGameFacade:
         """
         Creates and initializes a new BlackjackGame instance.
         """
-        # REFACTORING: Extract Method
         game = BlackjackGame()
         game.create_deck()
         game.start_game()
@@ -176,11 +161,8 @@ class BlackjackGameFacade:
     def _restore_game_from_session(self, session):
         """
         Restores a BlackjackGame instance from session data.
-        Uses card serializer to validate card data.
         """
-        # REFACTORING: Extract Method
         game_state = session['game']
-
 
         game_serializer = GameStateSerializer(data=game_state)
         if not game_serializer.is_valid():
@@ -188,9 +170,7 @@ class BlackjackGameFacade:
 
         game = BlackjackGame()
 
-        # REFACTORING: Simplify Conditional Expression
         if 'deck' in game_state:
-
             cards = []
             for card_data in game_state['deck']:
                 card_serializer = CardSerializer(data=card_data)
@@ -200,7 +180,6 @@ class BlackjackGameFacade:
         else:
             game.create_deck()
 
-
         player_cards = []
         for card_data in game_state['player_hand']:
             card_serializer = CardSerializer(data=card_data)
@@ -208,10 +187,8 @@ class BlackjackGameFacade:
                 player_cards.append(Card(**card_serializer.validated_data))
         game.player_hand = player_cards
 
-
         dealer_cards = []
         for card_data in game_state['dealer_hand']:
-
             if card_data.get('rank') == '?' and card_data.get('suit') == '?':
                 continue
             card_serializer = CardSerializer(data=card_data)
@@ -226,11 +203,8 @@ class BlackjackGameFacade:
     def _save_game_to_session(self, session, game):
         """
         Saves the current game state to the session.
-        Validates the game state with serializer before saving.
         """
-        # REFACTORING: Extract Method
         game_state = game.get_game_state()
-
 
         serializer = GameStateSerializer(data=game_state)
         if serializer.is_valid():
@@ -250,24 +224,30 @@ class BlackjackGameFacade:
                 "Game is over. Please start a new game."
             ).to_dict()
 
-        # REFACTORING: Extract Method
         game = self._restore_game_from_session(session)
-
         result = game.player_hit()
-        self._save_game_to_session(session, game)
 
-        # REFACTORING: Extract Method
+
+        if result and "Bust" in result:
+            game.game_over = True
+            self._save_game_to_session(session, game)
+            self._save_game_history(session, game, GameHistory.OUTCOME_LOSS)
+
+        else:
+            self._save_game_to_session(session, game)
+
         return self._process_hit_result(session, result)
 
     def _process_hit_result(self, session, result):
         """
         Processes the result of a player hit action, updating balance if needed.
         """
-        # REFACTORING: Extract Method
-        if result == "Bust! You lose.":
-            bet = session.get('bet', 0)
-            self._update_balance(-bet)
+        bet = session.get('bet', 0)
+
+
+        if session['game'].get('game_over', False) and result and "Bust" in result:
             session['bet'] = 0
+
 
         return GameResult(
             session['game'],
@@ -281,7 +261,6 @@ class BlackjackGameFacade:
         Processes a player's decision to stay (no more cards).
         """
         if 'game' in session and session['game'].get('game_over', False):
-            # REFACTORING: Introduce Parameter Object
             return GameResult(
                 session['game'],
                 self.get_current_balance(),
@@ -289,42 +268,102 @@ class BlackjackGameFacade:
                 "Game is over. Please start a new game."
             ).to_dict()
 
-        # REFACTORING: Extract Method
         game = self._restore_game_from_session(session)
-
         result = game.dealer_play()
+
+
+        game.game_over = True
         self._save_game_to_session(session, game)
 
-        # REFACTORING: Extract Method
-        return self._process_stay_result(session, result)
 
-    def _process_stay_result(self, session, result):
+        outcome = None
+        if "You win" in result:
+            outcome = GameHistory.OUTCOME_WIN
+        elif "tie" in result.lower():
+            outcome = GameHistory.OUTCOME_TIE
+        else:
+            outcome = GameHistory.OUTCOME_LOSS
+
+
+        self._save_game_history(session, game, outcome)
+
+
+        return self._process_stay_result(session, result, outcome)
+
+    def _process_stay_result(self, session, result, outcome):
         """
         Processes the result after a player stays, updating balance based on outcome.
         """
-        # REFACTORING: Extract Method
         bet = session.get('bet', 0)
 
-        if "You win" in result:
+
+        if outcome == GameHistory.OUTCOME_WIN:
             self._update_balance(bet * 2)
-        elif "tie" in result.lower():
+        elif outcome == GameHistory.OUTCOME_TIE:
             self._update_balance(bet)
+
 
         session['bet'] = 0
 
         return GameResult(
             session['game'],
             self.get_current_balance(),
-            session['bet'],
+            0,  # Bet is now 0
             result
         ).to_dict()
+
+    def _save_game_history(self, session, game, outcome):
+        """
+        Save the game result to the GameHistory model.
+        """
+        bet = session.get('bet', 0)
+        if bet == 0:
+            return
+
+        balance_before = self.get_current_balance()
+
+
+        if outcome == GameHistory.OUTCOME_WIN:
+            balance_change = bet
+        elif outcome == GameHistory.OUTCOME_LOSS:
+            balance_change = -bet
+        else:  # Tie
+            balance_change = 0
+
+
+        if outcome == GameHistory.OUTCOME_WIN:
+            balance_after = balance_before + (bet * 2)
+        elif outcome == GameHistory.OUTCOME_TIE:
+            balance_after = balance_before + bet
+        else:
+            balance_after = balance_before
+
+
+        player_hand_str = json.dumps([{'rank': card.rank, 'suit': card.suit} for card in game.player_hand])
+        dealer_hand_str = json.dumps([{'rank': card.rank, 'suit': card.suit} for card in game.dealer_hand])
+
+        player_score = game.get_hand_score(game.player_hand)
+        dealer_score = game.get_hand_score(game.dealer_hand)
+
+
+        GameHistory.objects.create(
+            user=self.user,
+            bet_amount=bet,
+            outcome=outcome,
+            player_score=player_score,
+            dealer_score=dealer_score,
+            player_hand=player_hand_str,
+            dealer_hand=dealer_hand_str,
+            balance_change=balance_change,
+            balance_before=balance_before,
+            balance_after=balance_after
+        )
 
     def place_bet(self, session, amount):
         """
         Places a bet of the specified amount.
-        Uses BetSerializer to validate the bet amount.
+
         """
-        # REFACTORING: Replace Nested Conditional with Guard Clauses
         if 'game' in session and session['game'].get('game_over', False):
             return GameResult(
                 session['game'],
@@ -332,7 +371,6 @@ class BlackjackGameFacade:
                 session.get('bet', 0),
                 "Game is over. Please start a new game before placing bets."
             ).to_dict()
-
 
         bet_serializer = BetSerializer(data={'amount': amount})
         if not bet_serializer.is_valid():
@@ -343,17 +381,22 @@ class BlackjackGameFacade:
                 "Invalid bet amount."
             ).to_dict()
 
-
         amount = bet_serializer.validated_data['amount']
         current_bet = session.get('bet', 0)
 
-        # REFACTORING: Replace Nested Conditional with Guard Clauses
         if amount == 0:
             self._update_balance(current_bet)
             session['bet'] = 0
-        elif self.get_current_balance() >= amount:  # REFACTORING: Replace Temporary Variable with Query
+        elif self.get_current_balance() >= amount:
             session['bet'] = current_bet + amount
             self._update_balance(-amount)
+        else:
+            return GameResult(
+                session.get('game'),
+                self.get_current_balance(),
+                current_bet,
+                "Insufficient balance for this bet."
+            ).to_dict()
 
         return GameResult(
             session.get('game'),
@@ -364,8 +407,7 @@ class BlackjackGameFacade:
 
     def _update_balance(self, amount):
         """
-        Updates the user's balance and saves the profile.
+        Updates the user's coin balance and saves the user model.
         """
-        # REFACTORING: Extract Method
-        self.profile.balance += amount
-        self.profile.save()
+        self.user.coin_balance += amount
+        self.user.save(update_fields=['coin_balance'])

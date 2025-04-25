@@ -1,9 +1,14 @@
 from rest_framework import serializers
+from .models import GameHistory
 
 """
 Serializers for the Blackjack game logic.
 Contains serializers for card, game state, and bets.
 """
+
+
+
+
 
 class CardSerializer(serializers.Serializer):
     """
@@ -21,7 +26,6 @@ class CardSerializer(serializers.Serializer):
     """
     rank = serializers.CharField()
     suit = serializers.CharField()
-
 
 class GameStateSerializer(serializers.Serializer):
     """
