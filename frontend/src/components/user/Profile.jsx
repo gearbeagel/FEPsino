@@ -81,6 +81,7 @@ export default function Profile() {
             setAmount("");
             setTxnType("DEPOSIT");
             setShowTxnModal(false);
+            window.location.reload();
         } catch (err) {
             console.error(err);
         }
@@ -89,7 +90,7 @@ export default function Profile() {
     const handleProfileSave = async e => {
         e.preventDefault();
         try {
-            await axios.put(`${apiUrl}/user/update/`, editData, {
+            await axios.patch(`${apiUrl}/user/profile/`, editData, {
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${localStorage.getItem("access_token")}`

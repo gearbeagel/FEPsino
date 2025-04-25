@@ -54,7 +54,7 @@ export default function SlotsGame() {
   const generateReels = () => {
 
     return Array(NUM_COLUMNS).fill().map(() =>
-        Array(NUM_COLUMNS).fill().map(() => SYMBOLS[getRandomReels(SYMBOLS.length)])
+        Array(NUM_ROWS).fill().map(() => SYMBOLS[getRandomReels(SYMBOLS.length)])
     );
   };
 
