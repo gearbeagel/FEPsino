@@ -48,7 +48,7 @@ class BlackjackGame:
         Creates and shuffles a standard 52-card deck if one doesn't exist.
         """
         if self.deck:
-            return
+            return  # Якщо колода вже існує, не створюємо нову
 
         self.deck = [Card(rank, suit) for suit in self.SUITS for rank in self.RANKS]
         random.shuffle(self.deck)
@@ -159,12 +159,7 @@ class BlackjackGame:
         """
         Returns the current game state as a dictionary.
         """
-        # REFACTORING: Remove Dead Code
-        # REFACTORING: Extract Value - improve readability
-        # REFACTORING: Replace Temporary Variable with Query
         player_score = self.get_hand_score(self.player_hand)
-
-        # REFACTORING: Simplify Conditional Logic
 
         if self.game_over or not self.dealer_hand:
             dealer_score = self.get_hand_score(self.dealer_hand)
@@ -178,14 +173,13 @@ class BlackjackGame:
             else:
                 dealer_hand_repr = []
 
-        # REFACTORING: Extract Variable - improve readability
         game_state = {
             'player_hand': [card.to_dict() for card in self.player_hand],
             'dealer_hand': dealer_hand_repr,
             'player_score': player_score,
             'dealer_score': dealer_score,
             'game_over': self.game_over,
+
         }
 
         return game_state
-

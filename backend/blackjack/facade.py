@@ -170,9 +170,9 @@ class BlackjackGameFacade:
 
         game = BlackjackGame()
 
-        if 'deck' in game_state:
+        if 'game_deck' in session:
             cards = []
-            for card_data in game_state['deck']:
+            for card_data in session['game_deck']:
                 card_serializer = CardSerializer(data=card_data)
                 if card_serializer.is_valid():
                     cards.append(Card(**card_serializer.validated_data))
@@ -206,6 +206,9 @@ class BlackjackGameFacade:
         """
         game_state = game.get_game_state()
 
+
+        session['game_deck'] = [card.to_dict() for card in game.deck]
+
         serializer = GameStateSerializer(data=game_state)
         if serializer.is_valid():
             session['game'] = game_state
@@ -217,22 +220,17 @@ class BlackjackGameFacade:
         Processes a player's request to hit (get another card).
         """
         if 'game' in session and session['game'].get('game_over', False):
-            return GameResult(
-                session['game'],
-                self.get_current_balance(),
-                session.get('bet', 0),
-                "Game is over. Please start a new game."
-            ).to_dict()
+            return {
+                'message': "Game is over. Please start a new game."
+            }
 
         game = self._restore_game_from_session(session)
         result = game.player_hit()
-
 
         if result and "Bust" in result:
             game.game_over = True
             self._save_game_to_session(session, game)
             self._save_game_history(session, game, GameHistory.OUTCOME_LOSS)
-
         else:
             self._save_game_to_session(session, game)
 
@@ -261,20 +259,15 @@ class BlackjackGameFacade:
         Processes a player's decision to stay (no more cards).
         """
         if 'game' in session and session['game'].get('game_over', False):
-            return GameResult(
-                session['game'],
-                self.get_current_balance(),
-                session.get('bet', 0),
-                "Game is over. Please start a new game."
-            ).to_dict()
+            return {
+                'message': "Game is over. Please start a new game."
+            }
 
         game = self._restore_game_from_session(session)
         result = game.dealer_play()
 
-
         game.game_over = True
         self._save_game_to_session(session, game)
-
 
         outcome = None
         if "You win" in result:
@@ -284,11 +277,10 @@ class BlackjackGameFacade:
         else:
             outcome = GameHistory.OUTCOME_LOSS
 
-
         self._save_game_history(session, game, outcome)
 
-
         return self._process_stay_result(session, result, outcome)
+
 
     def _process_stay_result(self, session, result, outcome):
         """
@@ -362,15 +354,11 @@ class BlackjackGameFacade:
     def place_bet(self, session, amount):
         """
         Places a bet of the specified amount.
-
         """
         if 'game' in session and session['game'].get('game_over', False):
-            return GameResult(
-                session['game'],
-                self.get_current_balance(),
-                session.get('bet', 0),
-                "Game is over. Please start a new game before placing bets."
-            ).to_dict()
+            return {
+                'message': "Game is over. Please start a new game before placing bets."
+            }
 
         bet_serializer = BetSerializer(data={'amount': amount})
         if not bet_serializer.is_valid():
