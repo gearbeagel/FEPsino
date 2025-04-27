@@ -9,5 +9,5 @@ class SpinAdmin(admin.ModelAdmin):
 
 @admin.register(Symbol)
 class SymbolAdmin(admin.ModelAdmin):
-    list_display = ('name', 'image_path', 'payout_multiplier')
+    list_display = ('name', 'payout_multiplier')
     search_fields = ('name',)

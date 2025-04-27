@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 import uuid
 
 
@@ -13,7 +13,7 @@ class Symbol(models.Model):
 
 class Spin(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='spins')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='spins')
     bet_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payout = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     result = models.JSONField()

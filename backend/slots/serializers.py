@@ -7,8 +7,8 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'balance', 'total_wager', 'total_won']
-        read_only_fields = ['id', 'balance', 'total_wager', 'total_won']
+        fields = ['id', 'email']
+        read_only_fields = ['id']
 
 class SymbolSerializer(serializers.ModelSerializer):
     class Meta:

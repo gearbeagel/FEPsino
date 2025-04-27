@@ -193,6 +193,12 @@ class SlotMachineService:
     def _update_user_balance_for_bet(self, user, bet_amount):
         """Update user balance for a new bet with error handling."""
         try:
+            # Check if user has these attributes before updating
+            if not hasattr(user, 'balance') or not hasattr(user, 'total_wager'):
+                import logging
+                logging.warning(f"User {user.id} does not have balance or total_wager attributes")
+                return False
+
             user.balance -= Decimal(bet_amount)
             user.total_wager += Decimal(bet_amount)
             user.save()
@@ -205,6 +211,12 @@ class SlotMachineService:
     def _update_user_balance_for_win(self, user, payout):
         """Update user balance for a win with error handling."""
         try:
+            # Check if user has these attributes before updating
+            if not hasattr(user, 'balance') or not hasattr(user, 'total_won'):
+                import logging
+                logging.warning(f"User {user.id} does not have balance or total_won attributes")
+                return False
+
             user.balance += payout
             user.total_won += payout
             user.save()
@@ -233,6 +245,15 @@ class SlotMachineService:
     def play_spin(self, user, bet_amount):
         """Process a single spin of the slot machine."""
         try:
+            # Check if user has balance attribute
+            if not hasattr(user, 'balance'):
+                import logging
+                logging.warning(f"User {user.id} does not have balance attribute")
+                return {
+                    'success': False,
+                    'message': 'User balance not available'
+                }
+
             # Validate user balance
             if user.balance < Decimal(bet_amount):
                 return {
@@ -271,14 +292,20 @@ class SlotMachineService:
                     'message': 'Error recording spin'
                 }
 
-            return {
+            # Prepare response
+            response = {
                 'success': True,
                 'spin_id': spin.id,
                 'result': result,
                 'win_data': win_data,
-                'payout': payout,
-                'current_balance': float(user.balance)
+                'payout': payout
             }
+
+            # Add current balance if available
+            if hasattr(user, 'balance'):
+                response['current_balance'] = float(user.balance)
+
+            return response
         except Exception as e:
             import logging
             logging.error(f"Unexpected error in play_spin: {str(e)}")

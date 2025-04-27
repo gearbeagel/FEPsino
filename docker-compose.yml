@@ -9,12 +9,13 @@ services:
     ports:
       - "8000:8000"
     command: >
-      chmod +x ./scripts/wait-for-db.sh && sh -c "./scripts/wait-for-db.sh &&
+      sh -c "./scripts/wait-for-db.sh &&
              python manage.py makemigrations &&
              python manage.py migrate &&
+             python manage.py loaddata slots/symbols.json &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./backend:/app-backend
+      - ./backend:/backend
     depends_on:
       - db
 
@@ -70,12 +71,12 @@ services:
       - SONAR_HOST_URL=${SONAR_HOST_URL}
       - SONAR_LOGIN=${SONAR_TOKEN}
     volumes:
-      - ./backend:/usr/src
+      - ./:/usr/src/
     depends_on:
       - sonarqube
     command: >
-      sh -c "./scripts/wait-for-sonar.sh sonarqube:9000 -- 
-             sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME"
+      sh -c "./backend/scripts/wait-for-sonar.sh sonarqube:9000 -- 
+                   sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME -Dsonar.exclusions=**/node_modules/**,**/test/**,**/tests/** -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info -Dsonar.testExecutionReportPaths=frontend/testResults/sonar-report.xml -Dsonar.sources=frontend/src -Dsonar.inclusions=frontend/src/**/*.js,frontend/src/**/*.jsx,frontend/src/**/*.ts,frontend/src/**/*.tsx -Dsonar.language=js"
     restart: "no"
     networks:
       - default
