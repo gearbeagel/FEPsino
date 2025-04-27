@@ -1,5 +1,9 @@
 from django.db import models
-from user.models import User
+from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
+
+
+User = get_user_model()
 
 
 
@@ -27,7 +31,11 @@ class GameHistory(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    bet_amount = models.PositiveIntegerField()
+    bet_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)]
+    )
     outcome = models.CharField(max_length=10, choices=OUTCOME_CHOICES)
     player_score = models.PositiveSmallIntegerField()
     dealer_score = models.PositiveSmallIntegerField()

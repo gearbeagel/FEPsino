@@ -12,9 +12,6 @@ urlpatterns = [
     path('state/', GameStateView.as_view(), name='game-state'),
     # GET: Returns the current state of the game, including hands, scores, and game status.
 
-    path('deal/', DealCardsView.as_view(), name='deal-cards'),
-    # POST: Deals two cards to both the player and dealer to start the game.
-
     path('hit/', HitView.as_view(), name='hit'),
     # POST: Player requests an additional card. Checks for bust.
 

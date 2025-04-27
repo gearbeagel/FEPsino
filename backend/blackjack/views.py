@@ -13,6 +13,7 @@ authentication_classes = [JWTAuthentication]
 class GameStateView(APIView):
     """View to get the current game state"""
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request):
         """Get current game state"""
@@ -24,6 +25,7 @@ class GameStateView(APIView):
 class DealCardsView(APIView):
     """View to deal initial cards"""
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         """Deal initial cards to start the game"""
@@ -35,6 +37,7 @@ class DealCardsView(APIView):
 class HitView(APIView):
     """View to hit (take another card)"""
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         """Player takes another card"""
@@ -46,6 +49,7 @@ class HitView(APIView):
 class StayView(APIView):
     """View to stay (end turn)"""
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         """Player stands with current cards"""
@@ -55,12 +59,13 @@ class StayView(APIView):
 
 
 class BetView(APIView):
-    """View to place a bet"""
+    """View to place a bet and automatically deal cards"""
     serializer_class = BetSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        """Place a bet"""
+        """Place a bet and deal cards if game isn't started"""
         serializer = BetSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data['amount']
@@ -74,6 +79,7 @@ class NewGameView(APIView):
     """View to start a new game"""
 
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
         """Start a new game"""

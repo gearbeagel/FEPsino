@@ -35,19 +35,16 @@ class GameResult:
 class BlackjackGameFacade:
     """
     Facade pattern that provides a simplified interface to the BlackjackGame.
-
     """
 
     def __init__(self, user):
         self.user = user
-
         self.user.refresh_from_db()
 
     def get_current_balance(self):
         """
         Returns the current coin balance of the user.
         """
-
         self.user.refresh_from_db()
         return self.user.coin_balance
 
@@ -138,7 +135,7 @@ class BlackjackGameFacade:
                 for _ in range(2):
                     game.player_hand.append(game.deal_card())
 
-                if not game.dealer_hand:
+                if len(game.dealer_hand) < 2:
                     game.dealer_hand.append(game.deal_card())
 
         self._save_game_to_session(session, game)
@@ -206,7 +203,6 @@ class BlackjackGameFacade:
         """
         game_state = game.get_game_state()
 
-
         session['game_deck'] = [card.to_dict() for card in game.deck]
 
         serializer = GameStateSerializer(data=game_state)
@@ -242,10 +238,8 @@ class BlackjackGameFacade:
         """
         bet = session.get('bet', 0)
 
-
         if session['game'].get('game_over', False) and result and "Bust" in result:
             session['bet'] = 0
-
 
         return GameResult(
             session['game'],
@@ -281,19 +275,16 @@ class BlackjackGameFacade:
 
         return self._process_stay_result(session, result, outcome)
 
-
     def _process_stay_result(self, session, result, outcome):
         """
         Processes the result after a player stays, updating balance based on outcome.
         """
         bet = session.get('bet', 0)
 
-
         if outcome == GameHistory.OUTCOME_WIN:
             self._update_balance(bet * 2)
         elif outcome == GameHistory.OUTCOME_TIE:
             self._update_balance(bet)
-
 
         session['bet'] = 0
 
@@ -314,14 +305,12 @@ class BlackjackGameFacade:
 
         balance_before = self.get_current_balance()
 
-
         if outcome == GameHistory.OUTCOME_WIN:
             balance_change = bet
         elif outcome == GameHistory.OUTCOME_LOSS:
             balance_change = -bet
         else:  # Tie
             balance_change = 0
-
 
         if outcome == GameHistory.OUTCOME_WIN:
             balance_after = balance_before + (bet * 2)
@@ -330,13 +319,11 @@ class BlackjackGameFacade:
         else:
             balance_after = balance_before
 
-
         player_hand_str = json.dumps([{'rank': card.rank, 'suit': card.suit} for card in game.player_hand])
         dealer_hand_str = json.dumps([{'rank': card.rank, 'suit': card.suit} for card in game.dealer_hand])
 
         player_score = game.get_hand_score(game.player_hand)
         dealer_score = game.get_hand_score(game.dealer_hand)
-
 
         GameHistory.objects.create(
             user=self.user,
@@ -353,12 +340,24 @@ class BlackjackGameFacade:
 
     def place_bet(self, session, amount):
         """
-        Places a bet of the specified amount.
+        Places a bet of the specified amount and automatically deals cards.
         """
-        if 'game' in session and session['game'].get('game_over', False):
-            return {
-                'message': "Game is over. Please start a new game before placing bets."
-            }
+        if 'game' in session and not session['game'].get('game_over', False):
+            game = self._restore_game_from_session(session)
+            if game.player_hand:
+                return GameResult(
+                    session['game'],
+                    self.get_current_balance(),
+                    session.get('bet', 0),
+                    "Cannot change bet during an active game."
+                ).to_dict()
+
+
+        if 'game' in session and session['game'].get('game_over', True):
+            new_game_result = self.start_new_game(session)
+            if 'message' in new_game_result and 'Cannot start a new game' in new_game_result['message']:
+                return new_game_result
+
 
         bet_serializer = BetSerializer(data={'amount': amount})
         if not bet_serializer.is_valid():
@@ -375,6 +374,12 @@ class BlackjackGameFacade:
         if amount == 0:
             self._update_balance(current_bet)
             session['bet'] = 0
+            return GameResult(
+                session.get('game'),
+                self.get_current_balance(),
+                0,
+                "Bet canceled."
+            ).to_dict()
         elif self.get_current_balance() >= amount:
             session['bet'] = current_bet + amount
             self._update_balance(-amount)
@@ -386,12 +391,11 @@ class BlackjackGameFacade:
                 "Insufficient balance for this bet."
             ).to_dict()
 
-        return GameResult(
-            session.get('game'),
-            self.get_current_balance(),
-            session.get('bet', 0),
-            "Bet placed successfully."
-        ).to_dict()
+
+        deal_result = self.deal_cards(session)
+        deal_result['message'] = "Bet placed and cards dealt."
+
+        return deal_result
 
     def _update_balance(self, amount):
         """
