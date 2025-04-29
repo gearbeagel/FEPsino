@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {HomeIcon, InfoIcon, User} from 'lucide-react';
+import {InfoIcon, User} from 'lucide-react';
 import fetchUser from "./user/UserApi.jsx";
 
 export default function Header() {
@@ -38,12 +38,10 @@ export default function Header() {
                 </nav>
                 <div className="flex items-center space-x-4">
                     {user ? (
-                        <>
                             <Link to="/profile" className="flex row items-center space-x-2">
                                 <User className="h-6 w-6 text-yellow-400"/>
                                 <div className="text-yellow-400">{user.email}</div>
                             </Link>
-                        </>
                     ) : (
                         <Link to="/signup">
                             <button

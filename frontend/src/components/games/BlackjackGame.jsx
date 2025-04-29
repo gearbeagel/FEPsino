@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+// BlackJackGame.jsx
+import React, { useState } from "react";
 import { Club, Play, RotateCcw, Heart, Diamond, Spade } from "lucide-react";
+import { Deck } from "./GameApi.jsx";
 
-const suits = { hearts: <Heart className="text-red-500" />, diamonds: <Diamond className="text-red-500" />, clubs: <Club className="text-black" />, spades: <Spade className="text-black" /> };
-const values = [
-    { name: "2", value: 2 }, { name: "3", value: 3 }, { name: "4", value: 4 },
-    { name: "5", value: 5 }, { name: "6", value: 6 }, { name: "7", value: 7 },
-    { name: "8", value: 8 }, { name: "9", value: 9 }, { name: "10", value: 10 },
-    { name: "J", value: 10 }, { name: "Q", value: 10 }, { name: "K", value: 10 },
-    { name: "A", value: 11 }
-];
-
-const suitsArray = ["hearts", "diamonds", "clubs", "spades"];
+const suits = {
+    hearts: <Heart className="text-red-500" />,
+    diamonds: <Diamond className="text-red-500" />,
+    clubs: <Club className="text-black" />,
+    spades: <Spade className="text-black" />,
+};
 
 function getResultColor(result) {
     if (!result) return "text-gray-500";
@@ -23,12 +21,14 @@ function getResultColor(result) {
     }
 }
 
-function createDeck() {
-    return suitsArray.flatMap(suit => values.map(({ name, value }) => ({ suit, name, value })));
-}
-
-function shuffleDeck(deck) {
-    return [...deck].sort(() => Math.random() - 0.5);
+function calculateHandValue(hand) {
+    let value = hand.reduce((sum, card) => sum + card.value, 0);
+    let aces = hand.filter(card => card.name === "A").length;
+    while (value > 21 && aces > 0) {
+        value -= 10;
+        aces -= 1;
+    }
+    return value;
 }
 
 export default function BlackJackGame() {
@@ -36,62 +36,51 @@ export default function BlackJackGame() {
     const [bet, setBet] = useState(10);
     const [lastWin, setLastWin] = useState(0);
     const [gameInitialized, setGameInitialized] = useState(false);
-    const [deck, setDeck] = useState(shuffleDeck(createDeck()));
+    const [deck] = useState(new Deck());
     const [playerHand, setPlayerHand] = useState([]);
     const [dealerHand, setDealerHand] = useState([]);
     const [gameResult, setGameResult] = useState(null);
 
-    function drawCard() {
-        if (deck.length === 0) setDeck(shuffleDeck(createDeck()));
-        return deck.pop();
-    }
-
-    function startGame() {
-        setDeck(shuffleDeck(createDeck()));
-        setPlayerHand([drawCard(), drawCard()]);
-        setDealerHand([drawCard(), drawCard()]);
+    const startGame = () => {
+        setPlayerHand([deck.drawCard(), deck.drawCard()]);
+        setDealerHand([deck.drawCard(), deck.drawCard()]);
         setGameResult(null);
         setGameInitialized(true);
-    }
+    };
 
-    function hit() {
-        const playerValue = calculateHandValue(playerHand);
-        if (playerHand.length < 5) {
-            setPlayerHand([...playerHand, drawCard()]);
-            if (playerValue > 21) {
-                setGameResult("You busted!");
-                setBalance(balance - bet);
-                setGameInitialized(false);
-            }
+    const hit = () => {
+        const newHand = [...playerHand, deck.drawCard()];
+        setPlayerHand(newHand);
+        if (calculateHandValue(newHand) > 21) {
+            setGameResult("You busted!");
+            setBalance(balance - bet);
+            setGameInitialized(false);
         }
-    }
+    };
 
-    function calculateHandValue(hand) {
-        let value = hand.reduce((sum, card) => sum + card.value, 0);
-        let aces = hand.filter(card => card.name === "A").length;
-        while (value > 21 && aces > 0) {
-            value -= 10;
-            aces -= 1;
-        }
-        return value;
-    }
-
-    function stand() {
+    const stand = () => {
         const playerValue = calculateHandValue(playerHand);
-        let dealerValue = calculateHandValue(dealerHand);
+        let dealerCards = [...dealerHand];
+        let dealerValue = calculateHandValue(dealerCards);
+
         while (dealerValue < 17) {
-            dealerHand.push(drawCard());
-            dealerValue = calculateHandValue(dealerHand);
+            dealerCards.push(deck.drawCard());
+            dealerValue = calculateHandValue(dealerCards);
         }
+
+        setDealerHand(dealerCards);
+
         if (playerValue > 21 || (dealerValue <= 21 && dealerValue >= playerValue)) {
             setGameResult(`You lost $${bet}!`);
+            setLastWin(bet);
             setBalance(balance - bet);
         } else {
             setGameResult(`You won $${bet}!`);
+            setLastWin(bet);
             setBalance(balance + bet);
         }
         setGameInitialized(false);
-    }
+    };
 
     return (
         <div className="flex-grow flex flex-col items-center p-6">
@@ -131,13 +120,14 @@ export default function BlackJackGame() {
                     </button>
                 </div>
                 <button
-                    onClick={() => startGame()}
+                    onClick={startGame}
                     className="w-full px-4 py-2 bg-yellow-400 rounded-lg hover:bg-yellow-500 text-black flex items-center justify-center text-xl font-bold transition-colors mt-5"
                 >
                     <Play className="h-6 w-6 mr-2" />
                     Start Game
                 </button>
             </div>
+
             {(gameInitialized || gameResult) && (
                 <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-8 shadow-xl w-full mt-8">
                     <div className="flex gap-4">

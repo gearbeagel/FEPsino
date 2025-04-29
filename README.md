@@ -1,15 +1,14 @@
-# FEPsino 
+<h1 align='center'>FEPsino</h1> 
 
-![Docker](https://img.shields.io/badge/Docker-🟦-blue?style=for-the-badge)  
-![Sonarqube](https://img.shields.io/badge/Sonarqube-🔍-brightgreen?style=for-the-badge)  
-
-## Tech Stack  
-
-![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)  
-![Django](https://img.shields.io/badge/Django-REST-092E20?style=for-the-badge&logo=django)  
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)  
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?style=for-the-badge&logo=tailwindcss)  
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql)  
+<p align='center'>
+  <img src="https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python" alt="Python"/>
+  <img src="https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray" alt="Django REST"/>
+  <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React"/>
+  <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS"/>
+  <img src="https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Docker-blue?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/SonarQube-black?style=for-the-badge&logo=sonarqube&logoColor=4E9BCD" alt="Sonarqube"/>
+</p>
 
 ---
 ## Overview
