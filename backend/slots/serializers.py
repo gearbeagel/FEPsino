@@ -4,12 +4,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'email']
-        read_only_fields = ['id']
-
 class SymbolSerializer(serializers.ModelSerializer):
     class Meta:
         model = Symbol
@@ -17,11 +11,12 @@ class SymbolSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name', 'payout_multiplier']
 
 class SpinSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user_id = serializers.ReadOnlyField(source='user.id')
+    user_email = serializers.ReadOnlyField(source='user.email')
 
     class Meta:
         model = Spin
-        fields = '__all__'
+        fields = ['id', 'user', 'user_id', 'user_email', 'payout', 'result', 'win_data', 'timestamp', 'bet_amount']
         read_only_fields = ['id', 'user', 'payout', 'result', 'win_data', 'timestamp']
 
 
