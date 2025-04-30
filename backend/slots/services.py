@@ -193,15 +193,20 @@ class SlotMachineService:
     def _update_user_balance_for_bet(self, user, bet_amount):
         """Update user balance for a new bet with error handling."""
         try:
-            # Check if user has these attributes before updating
-            if not hasattr(user, 'balance') or not hasattr(user, 'total_wager'):
+            # Check if user has profile
+            if not hasattr(user, 'profile'):
                 import logging
-                logging.warning(f"User {user.id} does not have balance or total_wager attributes")
+                logging.warning(f"User {user.id} does not have profile attribute")
                 return False
 
-            user.balance -= Decimal(bet_amount)
-            user.total_wager += Decimal(bet_amount)
-            user.save()
+            # Deduct from user's balance using the profile method
+            user.profile.deduct_balance(Decimal(bet_amount))
+
+            # Update total_wager if it exists
+            if hasattr(user, 'total_wager'):
+                user.total_wager += Decimal(bet_amount)
+                user.save()
+
             return True
         except Exception as e:
             import logging
@@ -211,15 +216,20 @@ class SlotMachineService:
     def _update_user_balance_for_win(self, user, payout):
         """Update user balance for a win with error handling."""
         try:
-            # Check if user has these attributes before updating
-            if not hasattr(user, 'balance') or not hasattr(user, 'total_won'):
+            # Check if user has profile
+            if not hasattr(user, 'profile'):
                 import logging
-                logging.warning(f"User {user.id} does not have balance or total_won attributes")
+                logging.warning(f"User {user.id} does not have profile attribute")
                 return False
 
-            user.balance += payout
-            user.total_won += payout
-            user.save()
+            # Add to user's balance using the profile method
+            user.profile.add_balance(payout)
+
+            # Update total_won if it exists
+            if hasattr(user, 'total_won'):
+                user.total_won += payout
+                user.save()
+
             return True
         except Exception as e:
             import logging
@@ -245,17 +255,17 @@ class SlotMachineService:
     def play_spin(self, user, bet_amount):
         """Process a single spin of the slot machine."""
         try:
-            # Check if user has balance attribute
-            if not hasattr(user, 'balance'):
+            # Check if user has profile
+            if not hasattr(user, 'profile'):
                 import logging
-                logging.warning(f"User {user.id} does not have balance attribute")
+                logging.warning(f"User {user.id} does not have profile attribute")
                 return {
                     'success': False,
-                    'message': 'User balance not available'
+                    'message': 'User profile not available'
                 }
 
             # Validate user balance
-            if user.balance < Decimal(bet_amount):
+            if user.profile.balance < Decimal(bet_amount):
                 return {
                     'success': False,
                     'message': 'Insufficient balance'
@@ -301,9 +311,9 @@ class SlotMachineService:
                 'payout': payout
             }
 
-            # Add current balance if available
-            if hasattr(user, 'balance'):
-                response['current_balance'] = float(user.balance)
+            # Add current balance if profile is available
+            if hasattr(user, 'profile'):
+                response['current_balance'] = float(user.profile.balance)
 
             return response
         except Exception as e:
