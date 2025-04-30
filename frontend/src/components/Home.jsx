@@ -1,7 +1,7 @@
 import React from "react";
-import { Coins, Dice5, Club } from "lucide-react";
+import { Coins, Dice5, Club, User } from "lucide-react";
 import { Link } from "react-router-dom";
-import { User } from "lucide-react";
+import PropTypes from 'prop-types';
 
 function GameCard({ title, description, icon, link }) {
     return (
@@ -19,6 +19,14 @@ function GameCard({ title, description, icon, link }) {
         </div>
     );
 }
+
+GameCard.propTypes = {
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    icon: PropTypes.string.isRequired,
+    link: PropTypes.string.isRequired,
+};
+
 
 function SignInPrompt() {
     return (
