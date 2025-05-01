@@ -2,7 +2,7 @@ from .game_logic import BlackjackGame, Card
 from .serializers import GameStateSerializer, BetSerializer, CardSerializer
 from .models import GameHistory
 from rest_framework.exceptions import ValidationError
-from user.models import User
+from user.models import User, Transaction
 import json
 
 
@@ -41,12 +41,15 @@ class BlackjackGameFacade:
         self.user = user
         self.user.refresh_from_db()
 
+        if not hasattr(self.user, 'profile'):
+            raise ValidationError("User profile not found. Please create a profile first.")
+
     def get_current_balance(self):
         """
-        Returns the current coin balance of the user.
+        Returns the current balance of the user's profile.
         """
         self.user.refresh_from_db()
-        return self.user.coin_balance
+        return self.user.profile.balance
 
     def get_game_state(self, session):
         """
@@ -281,17 +284,18 @@ class BlackjackGameFacade:
         """
         bet = session.get('bet', 0)
 
-        if outcome == GameHistory.OUTCOME_WIN:
-            self._update_balance(bet * 2)
-        elif outcome == GameHistory.OUTCOME_TIE:
-            self._update_balance(bet)
+        if bet > 0:
+            if outcome == GameHistory.OUTCOME_WIN:
+                self._update_balance(bet * 2)
+            elif outcome == GameHistory.OUTCOME_TIE:
+                self._update_balance(bet)
 
         session['bet'] = 0
 
         return GameResult(
             session['game'],
             self.get_current_balance(),
-            0,  # Bet is now 0
+            0,
             result
         ).to_dict()
 
@@ -303,19 +307,22 @@ class BlackjackGameFacade:
         if bet == 0:
             return
 
+        from decimal import Decimal
+
         balance_before = self.get_current_balance()
+        bet_decimal = Decimal(str(bet))
 
         if outcome == GameHistory.OUTCOME_WIN:
-            balance_change = bet
+            balance_change = bet_decimal
         elif outcome == GameHistory.OUTCOME_LOSS:
-            balance_change = -bet
-        else:  # Tie
-            balance_change = 0
+            balance_change = -bet_decimal
+        else:
+            balance_change = Decimal('0')
 
         if outcome == GameHistory.OUTCOME_WIN:
-            balance_after = balance_before + (bet * 2)
+            balance_after = balance_before + (bet_decimal * Decimal('2'))
         elif outcome == GameHistory.OUTCOME_TIE:
-            balance_after = balance_before + bet
+            balance_after = balance_before + bet_decimal
         else:
             balance_after = balance_before
 
@@ -352,12 +359,10 @@ class BlackjackGameFacade:
                     "Cannot change bet during an active game."
                 ).to_dict()
 
-
         if 'game' in session and session['game'].get('game_over', True):
             new_game_result = self.start_new_game(session)
             if 'message' in new_game_result and 'Cannot start a new game' in new_game_result['message']:
                 return new_game_result
-
 
         bet_serializer = BetSerializer(data={'amount': amount})
         if not bet_serializer.is_valid():
@@ -381,8 +386,14 @@ class BlackjackGameFacade:
                 "Bet canceled."
             ).to_dict()
         elif self.get_current_balance() >= amount:
-            session['bet'] = current_bet + amount
-            self._update_balance(-amount)
+
+            from decimal import Decimal
+            amount_decimal = Decimal(str(amount))
+            current_balance = self.get_current_balance()
+
+            if current_balance >= amount_decimal:
+                session['bet'] = current_bet + amount
+                self._update_balance(-amount_decimal)
         else:
             return GameResult(
                 session.get('game'),
@@ -391,7 +402,6 @@ class BlackjackGameFacade:
                 "Insufficient balance for this bet."
             ).to_dict()
 
-
         deal_result = self.deal_cards(session)
         deal_result['message'] = "Bet placed and cards dealt."
 
@@ -399,7 +409,24 @@ class BlackjackGameFacade:
 
     def _update_balance(self, amount):
         """
-        Updates the user's coin balance and saves the user model.
+        Updates the user's profile balance using the transaction system.
+        Uses withdrawal for negative amounts and deposit for positive amounts.
         """
-        self.user.coin_balance += amount
-        self.user.save(update_fields=['coin_balance'])
+        if amount == 0:
+            return
+
+
+        from decimal import Decimal
+        amount = Decimal(str(amount))
+
+        if amount > 0:
+
+            self.user.profile.process_transaction(
+                amount=amount,
+                transaction_type=Transaction.TransactionType.DEPOSIT
+            )
+        else:
+            self.user.profile.process_transaction(
+                amount=abs(amount),
+                transaction_type=Transaction.TransactionType.WITHDRAWAL
+            )
