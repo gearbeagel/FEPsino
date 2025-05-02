@@ -31,13 +31,11 @@ class DiceGameLogic:
             guessed_number=guessed_number
         )
         payout = self._calculate_payout(context)
-        user_coins = self.user_coins - bet + payout
 
         return {
             "rolls": (roll1, roll2),
             "total": total,
             "payout": payout,
-            "user_coins": user_coins
         }
 
     def _create_figures(self, choice1, choice2):

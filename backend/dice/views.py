@@ -27,7 +27,7 @@ class DiceGameView(APIView):
         user = request.user
         try:
             result = DiceGameService.execute_game_flow(user, data)
-            return Response(DiceGameService.build_response(result))
+            return Response(DiceGameService.build_response(result, user))
 
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
