@@ -3,8 +3,6 @@ from decimal import Decimal
 from .models import Symbol
 from .models import Spin
 
-from user.models import UserManager
-
 
 class ReelService:
     MIN_SYMBOLS_FOR_WIN = 2
@@ -184,7 +182,6 @@ class SlotMachineService:
         try:
             symbols = Symbol.objects.all()
             self.reel_service = ReelService(symbols)
-            self.user = UserManager()
         except Exception as e:
             import logging
             logging.error(f"Error initializing SlotMachineService: {str(e)}")
