@@ -13,11 +13,11 @@ class DiceGameService:
             CoinService.check_user_coins(user, bet)
             CoinService.deduct_bet(user, bet)
 
-            game_logic = DiceGameLogic(get_figure_factories(), float(user.profile.balance))
+            game_logic = DiceGameLogic(get_figure_factories(), user.profile.balance)
             result = game_logic.start_game(
                 choice1=data['choice1'],
                 choice2=data['choice2'],
-                bet=float(bet),
+                bet=bet,
                 guessed_number=data['guessed_number']
             )
             DiceGameService.save_game_to_db(user, data, result)
@@ -48,7 +48,7 @@ class DiceGameService:
             "roll2": result["rolls"][1],
             "total": result["total"],
             "payout": result["payout"],
-            "new_balance": float(user.profile.balance),
+            "new_balance": user.profile.balance,
             "message": "You won!" if result["payout"] > 0 else "You lost."
         }
 
