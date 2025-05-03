@@ -14,7 +14,7 @@ urlpatterns = [
         name='api-docs',
     ),
     path('api/user/', include('user.urls')),
-    # path('api/blackjack/', include('blackjack.urls')),
+    path('api/blackjack/', include('blackjack.urls')),
     path('api/dice/', include('dice.urls')),
     # path('api/slots/', include('slots.urls')),
 ]
