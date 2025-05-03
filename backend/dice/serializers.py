@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 
 
@@ -6,7 +7,7 @@ class StartDiceGameSerializer(serializers.Serializer):
 
     choice1 = serializers.ChoiceField(choices=VALID_DICE_CHOICES)
     choice2 = serializers.ChoiceField(choices=VALID_DICE_CHOICES)
-    bet = serializers.IntegerField(min_value=1)
+    bet = serializers.DecimalField(min_value=Decimal('0.01'), max_digits=10, decimal_places=2)
     guessed_number = serializers.IntegerField(min_value=2)
 
     def validate(self, data):
