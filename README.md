@@ -92,7 +92,7 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant User
+    actor User
     participant Frontend
     participant API
     participant Database
