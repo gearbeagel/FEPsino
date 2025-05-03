@@ -6,9 +6,8 @@ from .facade import BlackjackGameFacade
 from .serializers import BetSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-
-authentication_classes = [JWTAuthentication]
 """Views for the Blackjack game app."""
+
 
 class GameStateView(APIView):
     """View to get the current game state"""
@@ -19,18 +18,6 @@ class GameStateView(APIView):
         """Get current game state"""
         facade = BlackjackGameFacade(request.user)
         result = facade.get_game_state(request.session)
-        return Response(result)
-
-
-class DealCardsView(APIView):
-    """View to deal initial cards"""
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-
-    def post(self, request):
-        """Deal initial cards to start the game"""
-        facade = BlackjackGameFacade(request.user)
-        result = facade.deal_cards(request.session)
         return Response(result)
 
 
@@ -59,30 +46,25 @@ class StayView(APIView):
 
 
 class BetView(APIView):
-    """View to place a bet and automatically deal cards"""
+    """View to place a bet, start a new game and deal cards"""
     serializer_class = BetSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        """Place a bet and deal cards if game isn't started"""
         serializer = BetSerializer(data=request.data)
         if serializer.is_valid():
             amount = serializer.validated_data['amount']
             facade = BlackjackGameFacade(request.user)
-            result = facade.place_bet(request.session, amount)
-            return Response(result)
+            result = facade.start_new_game_with_bet(request.session, amount)
+
+            # If there's an error message, only return the message
+            if 'message' in result and ('Insufficient balance' in result['message'] or
+                                        'Invalid bet amount' in result['message'] or
+                                        'Cannot change bet' in result['message']):
+                return Response({'message': result['message']}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Success case: return simple confirmation
+            return Response({'message': 'Bet placed and game started'}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class NewGameView(APIView):
-    """View to start a new game"""
-
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-
-    def post(self, request):
-        """Start a new game"""
-        facade = BlackjackGameFacade(request.user)
-        result = facade.start_new_game(request.session)
-        return Response(result)

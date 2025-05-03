@@ -93,28 +93,59 @@ class BlackjackGameFacade:
         else:
             raise ValidationError("Failed to create a valid game state")
 
-    def start_new_game(self, session):
+    def start_new_game_with_bet(self, session, amount):
         """
-        Resets the game state and returns a fresh game state.
+        Starts a new game with a bet and deals cards.
         """
-        game_state = session.get('game')
+        # Check if a game is already in progress
+        if 'game' in session and not session['game'].get('game_over', False):
+            if session.get('bet', 0) > 0:
+                return {
+                    'message': "Cannot change bet during an active game."
+                }
 
-        if game_state and not game_state.get('game_over', True):
-            return GameResult(
-                game_state,
-                self.get_current_balance(),
-                session.get('bet', 0),
-                "Cannot start a new game while current game is in progress. Please finish the current game first."
-            ).to_dict()
+        # Validate bet amount
+        bet_serializer = BetSerializer(data={'amount': amount})
+        if not bet_serializer.is_valid():
+            return {
+                'message': "Invalid bet amount."
+            }
 
-        new_game_state = self._initialize_new_game(session)
-        session['bet'] = 0
+        amount = bet_serializer.validated_data['amount']
+
+        # Check if user has enough balance
+        if self.get_current_balance() < amount:
+            return {
+                'message': "Insufficient balance for this bet."
+            }
+
+        # Create a new game
+        self._initialize_new_game(session)
+
+        # Update bet and balance
+        from decimal import Decimal
+        amount_decimal = Decimal(str(amount))
+
+        session['bet'] = amount
+        self._update_balance(-amount_decimal)
+
+        # Deal cards
+        game = self._restore_game_from_session(session)
+
+        # Deal 2 cards to player
+        for _ in range(2):
+            game.player_hand.append(game.deal_card())
+
+        # Deal 1 more card to dealer (already has 1 from initialization)
+        game.dealer_hand.append(game.deal_card())
+
+        self._save_game_to_session(session, game)
 
         return GameResult(
-            new_game_state,
+            session['game'],
             self.get_current_balance(),
-            0,
-            "New game started!"
+            session.get('bet', 0),
+            "Bet placed and cards dealt."
         ).to_dict()
 
     def deal_cards(self, session):
@@ -345,68 +376,6 @@ class BlackjackGameFacade:
             balance_after=balance_after
         )
 
-    def place_bet(self, session, amount):
-        """
-        Places a bet of the specified amount and automatically deals cards.
-        """
-        if 'game' in session and not session['game'].get('game_over', False):
-            game = self._restore_game_from_session(session)
-            if game.player_hand:
-                return GameResult(
-                    session['game'],
-                    self.get_current_balance(),
-                    session.get('bet', 0),
-                    "Cannot change bet during an active game."
-                ).to_dict()
-
-        if 'game' in session and session['game'].get('game_over', True):
-            new_game_result = self.start_new_game(session)
-            if 'message' in new_game_result and 'Cannot start a new game' in new_game_result['message']:
-                return new_game_result
-
-        bet_serializer = BetSerializer(data={'amount': amount})
-        if not bet_serializer.is_valid():
-            return GameResult(
-                session.get('game'),
-                self.get_current_balance(),
-                session.get('bet', 0),
-                "Invalid bet amount."
-            ).to_dict()
-
-        amount = bet_serializer.validated_data['amount']
-        current_bet = session.get('bet', 0)
-
-        if amount == 0:
-            self._update_balance(current_bet)
-            session['bet'] = 0
-            return GameResult(
-                session.get('game'),
-                self.get_current_balance(),
-                0,
-                "Bet canceled."
-            ).to_dict()
-        elif self.get_current_balance() >= amount:
-
-            from decimal import Decimal
-            amount_decimal = Decimal(str(amount))
-            current_balance = self.get_current_balance()
-
-            if current_balance >= amount_decimal:
-                session['bet'] = current_bet + amount
-                self._update_balance(-amount_decimal)
-        else:
-            return GameResult(
-                session.get('game'),
-                self.get_current_balance(),
-                current_bet,
-                "Insufficient balance for this bet."
-            ).to_dict()
-
-        deal_result = self.deal_cards(session)
-        deal_result['message'] = "Bet placed and cards dealt."
-
-        return deal_result
-
     def _update_balance(self, amount):
         """
         Updates the user's profile balance using the transaction system.
@@ -414,7 +383,6 @@ class BlackjackGameFacade:
         """
         if amount == 0:
             return
-
 
         from decimal import Decimal
         amount = Decimal(str(amount))

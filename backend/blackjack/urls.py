@@ -1,6 +1,5 @@
 from django.urls import path
-from .views import GameStateView, DealCardsView, HitView, StayView, BetView, NewGameView
-
+from .views import GameStateView, HitView, StayView, BetView
 """Urls for the Blackjack game app."""
 
 
@@ -19,8 +18,5 @@ urlpatterns = [
     # POST: Player ends their turn. Dealer plays and final results are returned.
 
     path('bet/', BetView.as_view(), name='bet'),
-    # POST: Places a bet before the game starts. Requires "amount" field in JSON body.
-
-    path('new/', NewGameView.as_view(), name='new-game'),
-    # POST: Resets and initializes a new game session.
+    # POST: Places a bet, starts a new game and deals cards. Requires "amount" field in JSON body.
 ]
