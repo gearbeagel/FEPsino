@@ -33,6 +33,7 @@ const ConfirmPasswordField = ({ confirmPassword, setConfirmPassword }) => (
             type="password"
             required
             value={confirmPassword}
+            className="w-full bg-gray-700 rounded p-2 text-white"
             onChange={(e) => setConfirmPassword(e.target.value)}
         />
     </>
@@ -81,8 +82,7 @@ export default function SignUpIn() {
                 localStorage.setItem("access_token", res.data.access);
                 localStorage.setItem("refresh_token", res.data.refresh);
                 axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.access}`;
-                window.location.reload();
-                navigate("/");
+                window.location.href = "/";
             }
 
             toast.success(res.data.message);
