@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import transaction
 from .dice import get_figure_factories
 from .game_logic import DiceGameLogic
@@ -8,19 +9,19 @@ class DiceGameService:
     @staticmethod
     def execute_game_flow(user, data):
         with transaction.atomic():
-            bet = data['bet']
+            bet = Decimal(str(data['bet']))
             CoinService.check_user_coins(user, bet)
             CoinService.deduct_bet(user, bet)
 
-            game_logic = DiceGameLogic(get_figure_factories(), user.coin_balance)
+            game_logic = DiceGameLogic(get_figure_factories(), user.profile.balance)
             result = game_logic.start_game(
                 choice1=data['choice1'],
                 choice2=data['choice2'],
-                bet=data['bet'],
+                bet=bet,
                 guessed_number=data['guessed_number']
             )
             DiceGameService.save_game_to_db(user, data, result)
-            CoinService.update_balance(user, result["payout"])
+            CoinService.update_balance(user, Decimal(str(result["payout"])))
 
         return result
 
@@ -29,25 +30,25 @@ class DiceGameService:
         """Persists the result of the game to the database."""
         DiceGameModel.objects.create(
             user=user,
-            bet=data['bet'],
+            bet=Decimal(str(data['bet'])),
             guessed_number=data['guessed_number'],
             choice1=data['choice1'],
             choice2=data['choice2'],
             roll1=result['rolls'][0],
             roll2=result['rolls'][1],
             total=result['total'],
-            payout=result['payout'],
+            payout=Decimal(str(result['payout'])),
         )
 
     @staticmethod
-    def build_response(result):
+    def build_response(result, user):
         """Constructs the final response to be returned to the frontend."""
         return {
             "roll1": result["rolls"][0],
             "roll2": result["rolls"][1],
             "total": result["total"],
             "payout": result["payout"],
-            "new_balance": result["user_coins"],
+            "new_balance": user.profile.balance,
             "message": "You won!" if result["payout"] > 0 else "You lost."
         }
 
@@ -56,17 +57,17 @@ class CoinService:
     @staticmethod
     def check_user_coins(user, bet):
         """Check if the user has enough coins to place the bet."""
-        if bet > user.coin_balance:
+        if bet > user.profile.balance:
             raise ValueError('Not enough coins!')
 
     @staticmethod
     def deduct_bet(user, bet):
-        """Deduct the bet amount from the user's coin balance."""
-        user.coin_balance -= bet
+        """Deduct the bet amount from the user's balance."""
+        user.profile.balance -= bet
+        user.profile.save()
 
     @staticmethod
     def update_balance(user, payout):
         """Update the user's balance after the game."""
-        new_balance = user.coin_balance + payout
-        user.coin_balance = new_balance
-        user.save()
+        user.profile.balance += payout
+        user.profile.save()

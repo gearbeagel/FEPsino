@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+from decimal import Decimal
 
 @dataclass
 class GameContext:
@@ -14,7 +14,7 @@ class GameContext:
 class DiceGameLogic:
     PAYOUT_SCALE_FACTOR = 10
 
-    def __init__(self, figure_factories, user_coins):
+    def __init__(self, figure_factories, user_coins: Decimal):
         self.figure_factories = figure_factories
         self.user_coins = user_coins
 
@@ -31,13 +31,11 @@ class DiceGameLogic:
             guessed_number=guessed_number
         )
         payout = self._calculate_payout(context)
-        user_coins = self.user_coins - bet + payout
 
         return {
             "rolls": (roll1, roll2),
             "total": total,
             "payout": payout,
-            "user_coins": user_coins
         }
 
     def _create_figures(self, choice1, choice2):
@@ -54,14 +52,15 @@ class DiceGameLogic:
     @classmethod
     def _calculate_payout(cls, ctx: GameContext):
         """Calculates payout based on game context."""
-        min_faces = min(ctx.fig1.faces, ctx.fig2.faces)
-        max_faces = max(ctx.fig1.faces, ctx.fig2.faces)
+        min_faces = Decimal(ctx.fig1.faces)
+        max_faces = Decimal(ctx.fig2.faces)
         multiplier = (min_faces + max_faces) / cls.PAYOUT_SCALE_FACTOR
         match ctx.total:
             case _ if ctx.total == ctx.guessed_number:
-                return int(ctx.bet * (multiplier + 1))
+                return (ctx.bet * (multiplier + 1)).quantize(Decimal('0.01'))
             case _ if abs(ctx.total - ctx.guessed_number) == 1:
-                return int(ctx.bet * multiplier)
+                return (ctx.bet * multiplier).quantize(Decimal('0.01'))
             case _:
-                return 0
+                return Decimal('0.00')
+
 
