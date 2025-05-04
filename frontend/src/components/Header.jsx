@@ -18,7 +18,7 @@ export default function Header() {
                 setLoading(false);
             }
         };
-
+        getUser();
     }, []);
 
     if (loading) return null;
