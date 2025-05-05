@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Spin, Symbol
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -11,17 +12,15 @@ class SymbolSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'name', 'payout_multiplier']
 
 class SpinSerializer(serializers.ModelSerializer):
-    user_id = serializers.ReadOnlyField(source='user.id')
-    user_email = serializers.ReadOnlyField(source='user.email')
 
     class Meta:
         model = Spin
-        fields = ['id', 'user', 'user_id', 'user_email', 'payout', 'result', 'win_data', 'timestamp', 'bet_amount']
+        fields = ['id', 'user', 'payout', 'result', 'win_data', 'timestamp', 'bet_amount']
         read_only_fields = ['id', 'user', 'payout', 'result', 'win_data', 'timestamp']
 
 
 class SpinRequestSerializer(serializers.Serializer):
-    bet_amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01, max_value=1000.00)
+    bet_amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal(0.01), max_value=Decimal(1000.00))
 
     def validate_bet_amount(self, value):
         """
