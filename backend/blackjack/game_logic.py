@@ -165,11 +165,11 @@ class BlackjackGame:
             dealer_score = self.get_hand_score(self.dealer_hand)
             dealer_hand_repr = [card.to_dict() for card in self.dealer_hand]
         else:
+
             dealer_score = self.card_value(self.dealer_hand[0]) if self.dealer_hand else 0
             if self.dealer_hand:
                 dealer_hand_repr = [self.dealer_hand[0].to_dict()]
-                if len(self.dealer_hand) > 1:
-                    dealer_hand_repr.append({'rank': '?', 'suit': '?'})
+
             else:
                 dealer_hand_repr = []
 

@@ -68,3 +68,5 @@ class BetSerializer(serializers.Serializer):
         }
     """
     amount = serializers.IntegerField(required=True, min_value=0)
+
+
