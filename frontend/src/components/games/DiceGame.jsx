@@ -1,22 +1,49 @@
-import React, { useState } from "react";
-import { Dice5 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {Dice5, InfoIcon, Play} from "lucide-react";
 import { motion } from "framer-motion";
 import diceVariants from "../animations/DiceSpinningAnimation.jsx";
 import { toast, ToastContainer } from "react-toastify";
 
 export default function DiceGame() {
-    const [balance, setBalance] = useState(1000);
     const [bet, setBet] = useState(10);
+    const [balance, setBalance] = useState(0);
     const [lastWin, setLastWin] = useState(0);
     const [diceType1, setDiceType1] = useState("d6");
     const [diceType2, setDiceType2] = useState("d6");
     const [diceValue1, setDiceValue1] = useState(1);
     const [diceValue2, setDiceValue2] = useState(1);
-    const [selectedNumber, setSelectedNumber] = useState(1);
+    const [selectedNumber, setSelectedNumber] = useState(2);
     const [gameInitialized, setGameInitialized] = useState(false);
     const [rolling, setRolling] = useState(false);
 
     const diceSides = { d6: 6, d8: 8, d12: 12 };
+
+    const fetchBalance = async () => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/user/profile/`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem(
+                            "access_token"
+                        )}`,
+                    },
+                }
+            );
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Unexpected error");
+            const balance = parseFloat(result.balance || 0);
+            setBalance(balance);
+        } catch (error) {
+            toast.error("Failed to fetch balance: " + error.message);
+        }
+    };
+
+    useEffect(() => {
+        fetchBalance();
+    }, []);
     const totalSides = diceSides[diceType1] + diceSides[diceType2];
 
     const DICE_SHAPES = {
@@ -83,15 +110,21 @@ export default function DiceGame() {
     return (
         <div className="flex-grow flex flex-col items-center p-6">
             <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full">
-                {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
                         <Dice5 className="h-6 w-6 text-yellow-400 mr-2" />
                         <span className="text-xl">Balance: ${balance}</span>
                     </div>
-                    <span className="text-xl text-yellow-400">
-            Last Win: ${lastWin}
-          </span>
+                    <span className="text-xl text-yellow-400 group relative">
+                    <InfoIcon className="h-6 w-6 mr-2" />
+                    <span
+                        className="absolute top-full right-1/2 transform translate-x-6 mt-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        Choose your dice,
+                        <br/>
+                        bet on a number and roll to win!
+                    </span>
+                </span>
                 </div>
 
                 <h2 className="text-2xl text-center mb-4">Choose Your Dice</h2>
@@ -156,8 +189,9 @@ export default function DiceGame() {
                     <button
                         onClick={rollDice}
                         disabled={rolling}
-                        className="w-full px-4 py-2 bg-yellow-400 rounded-lg hover:bg-yellow-500 text-black text-xl font-bold shadow-md"
+                        className="w-full px-4 py-2 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:bg-gray-400 text-black text-xl font-bold shadow-md flex items-center justify-center"
                     >
+                        <Play className="h-6 w-6 mr-2" />
                         {rolling ? "Rolling..." : "Roll Dice"}
                     </button>
                 </div>
