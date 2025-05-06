@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Club, Play, RotateCcw, Heart, Diamond, Spade, AlertCircle } from "lucide-react";
+import {Club, Play, RotateCcw, Heart, Diamond, Spade, AlertCircle, InfoIcon} from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
@@ -75,19 +75,6 @@ export default function BlackJackGame() {
                 if (data.message) {
                     setGameResult(data.message);
                 }
-            } else if (data.player_hand && data.dealer_hand) {
-                setPlayerHand(data.player_hand);
-                setDealerHand(data.dealer_hand);
-                setBalance(data.balance || 1000);
-                setGameInitialized(data.game_in_progress || false);
-                if (data.game_in_progress &&
-                    ((data.player_hand && data.player_hand.length > 0) ||
-                        (data.dealer_hand && data.dealer_hand.length > 0))) {
-                    setGameActive(true);
-                }
-                if (data.message) {
-                    setGameResult(data.message);
-                }
             }
             setLoading(false);
         } catch (error) {
@@ -100,7 +87,7 @@ export default function BlackJackGame() {
         setLoading(true);
         setError(null);
         try {
-            await axios.post(
+            const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
                 { amount: betString },
                 {
@@ -150,10 +137,6 @@ export default function BlackJackGame() {
                 if (data.game_state.game_over) {
                     setGameInitialized(false);
                 }
-            } else {
-                setPlayerHand(data.player_hand || []);
-                setDealerHand(data.dealer_hand || []);
-                setBalance(data.balance || balance);
             }
 
             if (data.message) {
@@ -175,6 +158,18 @@ export default function BlackJackGame() {
                         <Club className="h-6 w-6 text-yellow-400 mr-2" />
                         <span className="text-xl">Balance: ${balance}</span>
                     </div>
+                    <span className="text-xl text-yellow-400 group relative">
+                        <InfoIcon className="h-6 w-6 mr-2" />
+                            <span
+                                className="absolute bottom-full right-1/2 transform translate-x-6 mb-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                Place your bet and start the game. You can hit or stand during your turn, and the dealer will play after you.
+                                <br/>
+                                The goal is to get as close to 21 as possible without going over. If you go over, you lose.
+                                <br/>
+                                If the dealer goes over, you win! If you both have the same score, it's a tie.
+                            </span>
+                    </span>
                 </div>
                 <div className="flex gap-4 items-center mt-6">
                     <div className="flex-1">
@@ -215,7 +210,7 @@ export default function BlackJackGame() {
                                             {suits[card.suit]}
                                         </div>
                                     ))}
-                                    {dealerHand.length < 2 && !gameResult && (
+                                    {dealerHand.length < 2 && (
                                         <div className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                         </div>
                                     )}
