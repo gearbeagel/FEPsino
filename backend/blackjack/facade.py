@@ -119,6 +119,11 @@ class BlackjackGameFacade:
                 'message': "Insufficient balance for this bet."
             }
 
+        if  amount == 0:
+            return {
+                'message': "Bet cannot equal zero."
+            }
+
         # Create a new game
         self._initialize_new_game(session)
 
@@ -389,12 +394,10 @@ class BlackjackGameFacade:
 
         if amount > 0:
 
-            self.user.profile.process_transaction(
-                amount=amount,
-                transaction_type=Transaction.TransactionType.DEPOSIT
+            self.user.profile.add_balance(
+                amount=amount
             )
         else:
-            self.user.profile.process_transaction(
-                amount=abs(amount),
-                transaction_type=Transaction.TransactionType.WITHDRAWAL
+            self.user.profile.deduct_balance(
+                amount=abs(amount)
             )
