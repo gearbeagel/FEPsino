@@ -115,6 +115,7 @@ class BlackjackGame:
             self.game_over = True
             return "Bust! You lose."
         if player_score == 21:
+            self.game_over = True
             return "Blackjack! 21 points."
         return None
 
