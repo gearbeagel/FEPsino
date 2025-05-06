@@ -1,0 +1,42 @@
+[
+  {
+    "model": "slots.symbol",
+    "pk": 0,
+    "fields": {
+      "name": "star",
+      "payout_multiplier": "3.00"
+    }
+  },
+  {
+    "model": "slots.symbol",
+    "pk": 1,
+    "fields": {
+      "name": "heart",
+      "payout_multiplier": "2.50"
+    }
+  },
+  {
+    "model": "slots.symbol",
+    "pk": 2,
+    "fields": {
+      "name": "cherry",
+      "payout_multiplier": "2.00"
+    }
+  },
+  {
+    "model": "slots.symbol",
+    "pk": 3,
+    "fields": {
+      "name": "gem",
+      "payout_multiplier": "1.50"
+    }
+  },
+  {
+    "model": "slots.symbol",
+    "pk": 4,
+    "fields": {
+      "name": "citrus",
+      "payout_multiplier": "1.00"
+    }
+  }
+]
