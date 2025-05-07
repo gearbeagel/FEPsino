@@ -5,6 +5,7 @@ import diceVariants from "../animations/DiceSpinningAnimation.jsx";
 import { toast, ToastContainer } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import {fetchBalance} from "./GameApi.jsx";
 
 export default function DiceGame() {
     const [bet, setBet] = useState(10);
@@ -21,7 +22,6 @@ export default function DiceGame() {
     const { isAuthenticated, loading } = useAuth();
     const navigate = useNavigate();
 
-    // Redirect if user is not authenticated
     useEffect(() => {
         if (!loading && !isAuthenticated) {
             navigate('/signup');
@@ -32,36 +32,20 @@ export default function DiceGame() {
 
     const { user } = useAuth();
 
-    const fetchBalance = async () => {
-        try {
-            if (user && user.balance) {
-                setBalance(parseFloat(user.balance || 0));
-            } else {
-                const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/user/profile/`,
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${localStorage.getItem(
-                                "access_token"
-                            )}`,
-                        },
-                    }
-                );
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || "Unexpected error");
-                const balance = parseFloat(result.balance || 0);
-                setBalance(balance);
-            }
-        } catch (error) {
-            toast.error("Failed to fetch balance: " + error.message);
-        }
-    };
-
     useEffect(() => {
-        fetchBalance();
-    }, []);
+        const getInitialBalance = async () => {
+            try {
+                await fetchBalance(setBalance, null);
+            } catch (error) {
+                toast.error(error.message);
+            }
+        };
+
+        if (!loading && isAuthenticated) {
+            getInitialBalance();
+        }
+    }, [loading, isAuthenticated]);
+
     const totalSides = diceSides[diceType1] + diceSides[diceType2];
 
     const DICE_SHAPES = {
