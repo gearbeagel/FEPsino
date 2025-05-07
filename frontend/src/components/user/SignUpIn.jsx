@@ -34,7 +34,7 @@ const ConfirmPasswordField = ({ confirmPassword, setConfirmPassword }) => (
             type="password"
             required
             value={confirmPassword}
-            className="w-full bg-gray-700 rounded p-2 text-white"
+            className="w-full bg-gray-700 rounded p-2 text-white my-2"
             onChange={(e) => setConfirmPassword(e.target.value)}
         />
     </>
@@ -109,7 +109,7 @@ export default function SignUpIn() {
                 animate={{ height: "auto" }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-                <div className="flex items-center">
+                <div className="flex items-center mb-3">
                     <User className="h-6 w-6 text-yellow-400 mr-2" />
                     <span className="text-xl text-yellow-400" data-testid="auth-title">
             {isSignUp ? "Sign up" : "Sign in"}
@@ -132,7 +132,7 @@ export default function SignUpIn() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-gray-700 rounded p-2 text-white"
+                            className="w-full bg-gray-700 rounded p-2 text-white my-2"
                             data-testid="email-input"
                         />
                         <label htmlFor="password" className="text-sm my-3">Password:</label>
@@ -143,7 +143,7 @@ export default function SignUpIn() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-gray-700 rounded p-2 text-white"
+                            className="w-full bg-gray-700 rounded p-2 text-white my-2"
                             data-testid="password-input"
                         />
 
