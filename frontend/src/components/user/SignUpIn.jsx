@@ -54,7 +54,6 @@ export default function SignUpIn() {
     const navigate = useNavigate();
     const { login, isAuthenticated } = useAuth();
 
-    // Redirect if user is already authenticated
     useEffect(() => {
         if (isAuthenticated) {
             navigate('/profile');

@@ -2,10 +2,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-// Create the authentication context
 const AuthContext = createContext(null);
 
-// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -21,7 +19,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Function to check if user is authenticated
   const checkAuthStatus = async () => {
     try {
       const token = localStorage.getItem('access_token');
