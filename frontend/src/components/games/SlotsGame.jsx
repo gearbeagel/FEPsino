@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { Coins, RotateCcw, Play, Star, Heart, Cherry, GemIcon, CitrusIcon } from 'lucide-react';
-import {getRandomReels} from "./GameApi.jsx";
+import React, { useState, useEffect } from 'react';
+import { Coins, RotateCcw, Play, Star, Heart, Cherry, GemIcon, CitrusIcon, InfoIcon } from 'lucide-react';
+import { toast, ToastContainer } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { fetchBalance } from "./GameApi";
 
 const SYMBOLS = [
   { id: 'star', component: <Star className="h-12 w-12 text-yellow-400" /> },
@@ -12,90 +16,206 @@ const SYMBOLS = [
 
 const NUM_COLUMNS = 5;
 const NUM_ROWS = 3;
-const MAX_SHUFFLES = 20;
 
 export default function SlotsGame() {
   const [reels, setReels] = useState(Array(5).fill(Array(3).fill(SYMBOLS[0])));
   const [isSpinning, setIsSpinning] = useState(false);
-  const [balance, setBalance] = useState(1000);
+  const [balance, setBalance] = useState(0);
   const [bet, setBet] = useState(10);
   const [lastWin, setLastWin] = useState(0);
+  const [winData, setWinData] = useState(null);
+  const spinIntervalRef = React.useRef(null);
 
-  const calculateWinnings = (reels) => {
-    const winningCombinations = [
-      [SYMBOLS[0], SYMBOLS[0], SYMBOLS[0]],
-      [SYMBOLS[1], SYMBOLS[1], SYMBOLS[1]],
-      [SYMBOLS[2], SYMBOLS[2], SYMBOLS[2]],
-      [SYMBOLS[3], SYMBOLS[3], SYMBOLS[3]],
-      [SYMBOLS[4], SYMBOLS[4], SYMBOLS[4]],
-    ];
+  const { isAuthenticated, loading, user } = useAuth();
+  const navigate = useNavigate();
 
-    let winnings = 0;
-
-    for (let row = 0; row < 3; row++) {
-      for (let combination of winningCombinations) {
-        if (reels[0][row] === combination[0] && reels[1][row] === combination[1] && reels[2][row] === combination[2]) {
-          winnings += 100;
-        }
+  useEffect(() => {
+      if (!loading && !isAuthenticated) {
+          navigate('/signup');
       }
+  }, [isAuthenticated, loading, navigate]);
+
+    useEffect(() => {
+        const getInitialBalance = async () => {
+            try {
+                await fetchBalance(setBalance, null);
+            } catch (error) {
+                toast.error(error.message);
+            }
+        };
+
+        if (!loading && isAuthenticated) {
+            getInitialBalance();
+        }
+    }, [loading, isAuthenticated]);
+
+    useEffect(() => {
+    return () => {
+      if (spinIntervalRef.current) {
+        spinIntervalRef.current.forEach(interval => clearInterval(interval));
+        spinIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  const convertBackendResultToReels = (result) => {
+    const newReels = [];
+
+    for (let i = 0; i < NUM_COLUMNS; i++) {
+      const reelSymbols = result[i].map(symbolIndex => SYMBOLS[symbolIndex]);
+      newReels.push(reelSymbols);
     }
 
-    for (let col = 0; col < 5; col++) {
-      for (let combination of winningCombinations) {
-        if (reels[col][0] === combination[0] && reels[col][1] === combination[1] && reels[col][2] === combination[2]) {
-          winnings += 100;
-        }
-      }
-    }
-
-    return winnings;
+    return newReels;
   };
 
-  const generateReels = () => {
-
+  const generateRandomReels = () => {
     return Array(NUM_COLUMNS).fill().map(() =>
-        Array(NUM_ROWS).fill().map(() => SYMBOLS[getRandomReels(SYMBOLS.length)])
+      Array(NUM_ROWS).fill().map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
     );
   };
 
-  const handleSpinEnd = (finalReels) => {
+  const handleSpinEnd = (finalReels, payout, newBalance, winData) => {
+    if (spinIntervalRef.current) {
+      spinIntervalRef.current.forEach(interval => clearInterval(interval));
+      spinIntervalRef.current = null;
+    }
+
     setReels(finalReels);
     setIsSpinning(false);
-
-    const winnings = calculateWinnings(finalReels);
-    setLastWin(winnings);
-    setBalance(prev => prev + winnings);
+    setLastWin(payout);
+    setBalance(newBalance);
+    setWinData(winData);
   };
 
-  const spin = () => {
-    if (balance < bet) return;
+  const spin = async () => {
+    if (balance < bet) {
+      toast.error("Insufficient balance");
+      return;
+    }
+
     setIsSpinning(true);
-    setBalance(prev => prev - bet);
+    setWinData(null);
 
-    let shuffleCount = 0;
+    if (spinIntervalRef.current) {
+      spinIntervalRef.current.forEach(interval => clearInterval(interval));
+    }
 
-    const spinInterval = setInterval(() => {
-      setReels(generateReels());
+    spinIntervalRef.current = [];
 
-      shuffleCount++;
-      if (shuffleCount >= MAX_SHUFFLES) {
-        clearInterval(spinInterval);
-        handleSpinEnd(generateReels());
+    let tempReels = [...reels];
+
+    for (let colIndex = 0; colIndex < NUM_COLUMNS; colIndex++) {
+      const initialInterval = setInterval(() => {
+        const randomReel = Array(NUM_ROWS).fill().map(() => 
+          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]
+        );
+
+        tempReels = tempReels.map((col, i) => 
+          i === colIndex ? randomReel : col
+        );
+
+        setReels([...tempReels]);
+      }, 100);
+
+      spinIntervalRef.current.push(initialInterval);
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/slots/spins/spin/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+          body: JSON.stringify({
+            bet_amount: bet,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Unexpected error");
       }
-    }, 100);
+
+      const finalReels = convertBackendResultToReels(result.result);
+
+      for (let colIndex = 0; colIndex < NUM_COLUMNS; colIndex++) {
+        ((col) => {
+          setTimeout(() => {
+            if (spinIntervalRef.current && spinIntervalRef.current[col]) {
+              clearInterval(spinIntervalRef.current[col]);
+
+              tempReels = tempReels.map((reelCol, i) => 
+                i === col ? finalReels[col] : reelCol
+              );
+
+              setReels([...tempReels]);
+
+              if (col === NUM_COLUMNS - 1) {
+                setTimeout(() => {
+                  handleSpinEnd(
+                    finalReels, 
+                    parseFloat(result.payout), 
+                    parseFloat(result.current_balance), 
+                    result.win_data
+                  );
+                }, 500);
+              }
+            }
+          }, 300 * (col + 1));
+        })(colIndex);
+      }
+
+    } catch (error) {
+      if (spinIntervalRef.current) {
+        spinIntervalRef.current.forEach(interval => clearInterval(interval));
+      }
+      spinIntervalRef.current = null;
+
+      setIsSpinning(false);
+      toast.error("Error spinning: " + error.message);
+      try {
+        await fetchBalance(setBalance, user);
+      } catch (fetchError) {
+        toast.error(fetchError.message);
+      }
+    }
+  };
+
+  const isWinningSymbol = (colIndex, rowIndex) => {
+    if (!winData) return false;
+
+    const backendRowIndex = rowIndex + 1;
+
+    if (winData[backendRowIndex]) {
+      const [symbolName, indices] = winData[backendRowIndex];
+      return indices.includes(colIndex);
+    }
+
+    return false;
   };
 
   return (
-      <div className="container max-w-4xl mx-auto">
-        <div className="bg-slate-900 border border-yellow-400 rounded-lg p-6 mb-8">
+      <div className="flex-grow flex flex-col items-center p-6">
+        <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <Coins className="h-6 w-6 text-yellow-400 mr-2" />
               <span className="text-xl">Balance: ${balance}</span>
             </div>
-            <div className="flex items-center">
-              <span className="text-xl text-yellow-400">Last Win: ${lastWin}</span>
-            </div>
+            <span className="text-xl text-yellow-400 group relative">
+              <InfoIcon className="h-6 w-6 mr-2" />
+              <span
+                className="absolute top-full right-1/2 transform translate-x-6 mt-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Match 3 or more symbols in a row to win!
+              </span>
+            </span>
           </div>
 
           <div className="flex gap-4 items-center">
@@ -105,6 +225,7 @@ export default function SlotsGame() {
                   value={bet}
                   onChange={(e) => setBet(Number(e.target.value))}
                   className="w-full bg-gray-700 rounded p-2 text-white"
+                  disabled={isSpinning}
               >
                 <option value="10">$10</option>
                 <option value="20">$20</option>
@@ -112,34 +233,47 @@ export default function SlotsGame() {
                 <option value="100">$100</option>
               </select>
             </div>
-
-            <button
-                onClick={() => setBet(prev => Math.min(prev * 2, 100))}
-                className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
-            >
-              2x
-            </button>
-
-            <button
-                onClick={() => setBet(10)}
-                className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
-            >
-              <RotateCcw className="h-5 w-5" />
-            </button>
           </div>
+
+          <button
+              onClick={spin}
+              disabled={isSpinning || balance < bet}
+              className={`w-full px-4 py-2 mt-5 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:bg-slate-600 text-black text-xl font-bold shadow-md flex items-center justify-center ${
+                  isSpinning || balance < bet
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-yellow-400 hover:bg-yellow-500 text-black'
+              }`}
+          >
+              <Play className="h-6 w-6 mr-2" />
+              {isSpinning ? 'Spinning...' : 'Spin'}
+          </button>
         </div>
 
-        <div className="bg-slate-900 rounded-lg border border-yellow-400 p-8 mb-8">
-          <div className="flex justify-center mb-8">
+        <div className="container max-w-4xl bg-slate-900 rounded-lg border border-yellow-400 p-8 shadow-xl w-full mb-8">
+            <div className="flex justify-center mb-8">
             <div className="grid grid-cols-5 gap-4">
               {reels.map((column, colIndex) => (
-                  <div key={`column-${colIndex}`} className={`flex flex-col gap-4 ${isSpinning ? 'spin' : ''}`}>
+                  <div key={`column-${colIndex}`} className="flex flex-col gap-4 overflow-hidden">
                     {column.map((symbol, rowIndex) => (
-                        <div
-                            key={`symbol-${symbol.id}-${rowIndex}`}
-                            className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center text-4xl overflow-hidden"
-                        >
-                          {symbol.component}
+                        <div key={`symbol-container-${symbol.id}-${rowIndex}`} className="relative">
+                          {isWinningSymbol(colIndex, rowIndex) && (
+                            <motion.div 
+                              className="absolute inset-0 border-2 bg-green-500 border-green-500 rounded-lg z-20"
+                              animate={{ opacity: [0.5, 0.3, 0.5] }}
+                              transition={{ 
+                                repeat: Infinity, 
+                                duration: 1,
+                                ease: "easeInOut"
+                              }}
+                            />
+                          )}
+                          <motion.div
+                              key={`symbol-${symbol.id}-${rowIndex}`}
+                              className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center text-4xl overflow-hidden
+                                        transition-colors duration-300 relative z-10"
+                          >
+                            {symbol.component}
+                          </motion.div>
                         </div>
                     ))}
                   </div>
@@ -147,19 +281,20 @@ export default function SlotsGame() {
             </div>
           </div>
 
-          <button
-              onClick={spin}
-              disabled={isSpinning || balance < bet}
-              className={`w-full py-4 rounded-lg flex items-center justify-center text-xl font-bold transition-colors ${
-                  isSpinning || balance < bet
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-yellow-400 hover:bg-yellow-500 text-black'
-              }`}
-          >
-            <Play className="h-6 w-6 mr-2" />
-            {isSpinning ? 'Spinning...' : 'Spin'}
-          </button>
+          {winData && lastWin > 0 && (
+              <h2 className="text-2xl text-center text-green-400">You Won ${lastWin}!</h2>
+          )}
         </div>
+
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          pauseOnHover
+          theme="dark"
+        />
       </div>
   );
 }
