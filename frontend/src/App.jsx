@@ -11,6 +11,7 @@ import routerVariants from "./components/animations/RouterAnimations.jsx";
 import "./App.css";
 import Profile from "./components/user/Profile.jsx";
 import BlackJackGame from "./components/games/BlackjackGame.jsx";
+import { AuthProvider } from "./context/AuthContext";
 
 const withAnimation = (WrappedComponent) => {
     return function AnimatedComponent(props) {
@@ -57,12 +58,14 @@ function AnimatedRoutes() {
 function App() {
     return (
         <Router>
-            <div className="h-screen overflow-hidden bg-black text-white flex flex-col">
-                <Header />
-                <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-12 pb-4">
-                    <AnimatedRoutes />
-                </main>
-            </div>
+            <AuthProvider>
+                <div className="h-screen overflow-hidden bg-black text-white flex flex-col">
+                    <Header />
+                    <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-12 pb-4">
+                        <AnimatedRoutes />
+                    </main>
+                </div>
+            </AuthProvider>
         </Router>
     );
 }

@@ -3,6 +3,8 @@ import {Dice5, InfoIcon, Play} from "lucide-react";
 import { motion } from "framer-motion";
 import diceVariants from "../animations/DiceSpinningAnimation.jsx";
 import { toast, ToastContainer } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function DiceGame() {
     const [bet, setBet] = useState(10);
@@ -16,26 +18,42 @@ export default function DiceGame() {
     const [gameInitialized, setGameInitialized] = useState(false);
     const [rolling, setRolling] = useState(false);
 
+    const { isAuthenticated, loading } = useAuth();
+    const navigate = useNavigate();
+
+    // Redirect if user is not authenticated
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            navigate('/signup');
+        }
+    }, [isAuthenticated, loading, navigate]);
+
     const diceSides = { d6: 6, d8: 8, d12: 12 };
+
+    const { user } = useAuth();
 
     const fetchBalance = async () => {
         try {
-            const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/user/profile/`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem(
-                            "access_token"
-                        )}`,
-                    },
-                }
-            );
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Unexpected error");
-            const balance = parseFloat(result.balance || 0);
-            setBalance(balance);
+            if (user && user.balance) {
+                setBalance(parseFloat(user.balance || 0));
+            } else {
+                const response = await fetch(
+                    `${import.meta.env.VITE_API_URL}/user/profile/`,
+                    {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem(
+                                "access_token"
+                            )}`,
+                        },
+                    }
+                );
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Unexpected error");
+                const balance = parseFloat(result.balance || 0);
+                setBalance(balance);
+            }
         } catch (error) {
             toast.error("Failed to fetch balance: " + error.message);
         }
@@ -189,7 +207,7 @@ export default function DiceGame() {
                     <button
                         onClick={rollDice}
                         disabled={rolling}
-                        className="w-full px-4 py-2 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:bg-gray-400 text-black text-xl font-bold shadow-md flex items-center justify-center"
+                        className="w-full px-4 py-2 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:bg-slate-600 text-black text-xl font-bold shadow-md flex items-center justify-center"
                     >
                         <Play className="h-6 w-6 mr-2" />
                         {rolling ? "Rolling..." : "Roll Dice"}

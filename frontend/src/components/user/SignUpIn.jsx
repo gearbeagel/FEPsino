@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { useAuth } from "../../context/AuthContext";
 
 const AuthButton = ({ onClick, children }) => (
     <button
@@ -51,6 +52,14 @@ export default function SignUpIn() {
     const [isSignUp, setIsSignUp] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { login, isAuthenticated } = useAuth();
+
+    // Redirect if user is already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/profile');
+        }
+    }, [isAuthenticated, navigate]);
 
     const toggleForm = () => setIsSignUp(!isSignUp);
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -79,10 +88,9 @@ export default function SignUpIn() {
             );
 
             if (!isSignUp && res.data.access && res.data.refresh) {
-                localStorage.setItem("access_token", res.data.access);
-                localStorage.setItem("refresh_token", res.data.refresh);
-                axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.access}`;
-                window.location.href = "/";
+                // Use the login function from the auth context
+                login(res.data);
+                navigate('/');
             }
 
             toast.success(res.data.message);
