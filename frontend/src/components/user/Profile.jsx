@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import UserProfileInfo from "./profileUtils/UserProfileInfo.jsx";
 import TransactionTable from "./profileUtils/TransactionTable.jsx";
 import TransactionModal from "./profileUtils/TransactionModal.jsx";
 import EditProfileModal from "./profileUtils/EditProfileModal.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 export default function Profile() {
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const [user, setUser] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [showTxnModal, setShowTxnModal] = useState(false);
@@ -41,10 +45,10 @@ export default function Profile() {
                     Authorization: `Bearer ${localStorage.getItem("access_token")}`
                 }
             });
+            await logout();
         } catch {}
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/";
     };
 
     const handleTransaction = async (amount, txnType) => {
@@ -84,6 +88,10 @@ export default function Profile() {
                 }
             });
             setShowEditModal(false);
+            const profileRes = await axios.get(`${apiUrl}/user/profile/`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+            });
+            setUser(profileRes.data);
         } catch (err) {
             console.error(err);
         }

@@ -22,7 +22,7 @@ function getResultColor(result) {
 }
 
 export default function BlackJackGame() {
-    const [balance, setBalance] = useState(1000);
+    const [balance, setBalance] = useState(0);
     const [bet, setBet] = useState(10);
     const [gameInitialized, setGameInitialized] = useState(false);
     const [gameActive, setGameActive] = useState(false);
@@ -62,19 +62,27 @@ export default function BlackJackGame() {
             const data = response.data;
 
             if (data.game_state) {
-                setPlayerHand(data.game_state.player_hand || []);
-                setDealerHand(data.game_state.dealer_hand || []);
-                setBalance(data.balance || 1000);
-                setBet(data.bet || 0);
-                setGameInitialized(!data.game_state.game_over);
-                if (!data.game_state.game_over &&
-                    ((data.game_state.player_hand && data.game_state.player_hand.length > 0) ||
-                        (data.game_state.dealer_hand && data.game_state.dealer_hand.length > 0))) {
-                    setGameActive(true);
+                if (data.game_state.game_over) {
+                    setPlayerHand([]);
+                    setDealerHand([]);
+                    setGameInitialized(false);
+                    setGameActive(false);
+                    setGameResult(null);
+                } else {
+                    setPlayerHand(data.game_state.player_hand || []);
+                    setDealerHand(data.game_state.dealer_hand || []);
+                    setGameInitialized(true);
+                    if ((data.game_state.player_hand && data.game_state.player_hand.length > 0) ||
+                        (data.game_state.dealer_hand && data.game_state.dealer_hand.length > 0)) {
+                        setGameActive(true);
+                    }
+                    if (data.message) {
+                        setGameResult(data.message);
+                    }
                 }
-                if (data.message) {
-                    setGameResult(data.message);
-                }
+
+                setBalance(data.balance || 0);
+                setBet(data.bet || 10);
             }
             setLoading(false);
         } catch (error) {
@@ -83,13 +91,19 @@ export default function BlackJackGame() {
     };
 
     const startGame = async () => {
-        const betString = bet.toString();
         setLoading(true);
         setError(null);
+
+        setPlayerHand([]);
+        setDealerHand([]);
+        setGameResult(null);
+        setGameInitialized(false);
+        setGameActive(false);
+
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                { amount: betString },
+                { amount: bet.toString() },
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -132,7 +146,7 @@ export default function BlackJackGame() {
                 setPlayerHand(data.game_state.player_hand || []);
                 setDealerHand(data.game_state.dealer_hand || []);
                 setBalance(data.balance || balance);
-                setBet(data.bet || bet);
+                setBet(Number(data.bet) || bet);
 
                 if (data.game_state.game_over) {
                     setGameInitialized(false);
