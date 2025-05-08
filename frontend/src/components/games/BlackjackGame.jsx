@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {Club, Play, RotateCcw, Heart, Diamond, Spade, AlertCircle, InfoIcon} from "lucide-react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 
 const suits = {
@@ -36,10 +36,11 @@ export default function BlackJackGame() {
         fetchGameState();
     }, []);
 
-    const handleApiError = (error, operation = "operation") => {
-        setLoading(false);
-        setError(`Error during ${operation}: ${error.message}`);
-        toast.error(`Error during ${operation}: ${error.message}`);
+    const handleApiError = (error, operation = "operation", customMessage = null) => {
+        setLoading(null)
+        const message = customMessage || error.response?.data?.message || `Failed to ${operation}`;
+        setError(message);
+        toast.error(message);
     };
 
 
@@ -86,7 +87,9 @@ export default function BlackJackGame() {
             }
             setLoading(false);
         } catch (error) {
-            handleApiError(error, "fetch game state");
+            const message = error.response?.data?.message || "Failed to fetch game state";
+            console.log(message)
+            handleApiError(error, "fetch game state", message);
         }
     };
 
@@ -266,6 +269,15 @@ export default function BlackJackGame() {
                     </div>
                 </div>
             )}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                pauseOnHover
+                theme="dark"
+            />
         </div>
     );
 }

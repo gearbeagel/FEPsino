@@ -27,13 +27,12 @@ export default function Header() {
                         <div className="flex items-center space-x-4">
                             <Link to="/profile" className="flex items-center space-x-2 hover:text-yellow-400">
                                 <User className="h-6 w-6 text-yellow-400" />
-                                <span>{user?.username}</span>
                             </Link>
                         </div>
                     ) : (
                         <Link to="/signup">
-                            <button className="flex items-center space-x-2 border border-yellow-400 bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 transition-colors">
-                                <User className="h-6 w-6 text-black" />
+                            <button className="flex items-center space-x-2 text-yellow-400 px-4 py-2 rounded hover:text-yellow-500 transition-colors">
+                                <User className="h-6 w-6 text-yellow-400" />
                                 <span>Login / Sign Up</span>
                             </button>
                         </Link>
