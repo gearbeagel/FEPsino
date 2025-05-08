@@ -101,6 +101,9 @@ export default function DiceGame() {
             setBalance(result.new_balance);
             setGameInitialized(true);
         } catch (error) {
+            if (error.message === "Not enough coins!") {
+                error.message = "Insufficient balance for this bet.";
+            }
             toast.error(error.message);
         } finally {
             setRolling(false);

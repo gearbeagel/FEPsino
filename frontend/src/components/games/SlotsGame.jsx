@@ -90,7 +90,7 @@ export default function SlotsGame() {
 
   const spin = async () => {
     if (balance < bet) {
-      toast.error("Insufficient balance");
+      toast.error("Insufficient balance for this bet.");
       return;
     }
 
@@ -237,9 +237,9 @@ export default function SlotsGame() {
 
           <button
               onClick={spin}
-              disabled={isSpinning || balance < bet}
+              disabled={isSpinning}
               className={`w-full px-4 py-2 mt-5 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:bg-slate-600 text-black text-xl font-bold shadow-md flex items-center justify-center ${
-                  isSpinning || balance < bet
+                  isSpinning
                       ? 'bg-gray-600 cursor-not-allowed'
                       : 'bg-yellow-400 hover:bg-yellow-500 text-black'
               }`}
