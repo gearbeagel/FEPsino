@@ -10,8 +10,10 @@ class DiceGameService:
     def execute_game_flow(user, data):
         with transaction.atomic():
             bet = Decimal(str(data['bet']))
-            CoinService.check_user_coins(user, bet)
-            CoinService.deduct_bet(user, bet)
+
+            if user.profile.balance < bet:
+                raise ValueError('Not enough coins!')
+            user.profile.deduct_balance(bet)
 
             game_logic = DiceGameLogic(get_figure_factories(), user.profile.balance)
             result = game_logic.start_game(
@@ -20,14 +22,16 @@ class DiceGameService:
                 bet=bet,
                 guessed_number=data['guessed_number']
             )
+
             DiceGameService.save_game_to_db(user, data, result)
-            CoinService.update_balance(user, Decimal(str(result["payout"])))
+
+            if result["payout"] > 0:
+                user.profile.add_balance(Decimal(str(result["payout"])))
 
         return result
 
     @staticmethod
     def save_game_to_db(user, data, result):
-        """Persists the result of the game to the database."""
         DiceGameModel.objects.create(
             user=user,
             bet=Decimal(str(data['bet'])),
@@ -42,7 +46,6 @@ class DiceGameService:
 
     @staticmethod
     def build_response(result, user):
-        """Constructs the final response to be returned to the frontend."""
         return {
             "roll1": result["rolls"][0],
             "roll2": result["rolls"][1],
@@ -51,23 +54,3 @@ class DiceGameService:
             "new_balance": user.profile.balance,
             "message": "You won!" if result["payout"] > 0 else "You lost."
         }
-
-
-class CoinService:
-    @staticmethod
-    def check_user_coins(user, bet):
-        """Check if the user has enough coins to place the bet."""
-        if bet > user.profile.balance:
-            raise ValueError('Not enough coins!')
-
-    @staticmethod
-    def deduct_bet(user, bet):
-        """Deduct the bet amount from the user's balance."""
-        user.profile.balance -= bet
-        user.profile.save()
-
-    @staticmethod
-    def update_balance(user, payout):
-        """Update the user's balance after the game."""
-        user.profile.balance += payout
-        user.profile.save()
