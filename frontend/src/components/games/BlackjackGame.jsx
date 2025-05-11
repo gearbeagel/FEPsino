@@ -37,10 +37,11 @@ export default function BlackJackGame() {
     }, []);
 
     const handleApiError = (error, operation = "operation", customMessage = null) => {
-        setLoading(null)
+        setLoading(false);
         const message = customMessage || error.response?.data?.message || `Failed to ${operation}`;
         setError(message);
         toast.error(message);
+        console.error(`Error during ${operation}:`, error);
     };
 
 
@@ -118,9 +119,6 @@ export default function BlackJackGame() {
             );
 
             await fetchGameState();
-            setGameResult(null);
-            setGameInitialized(true);
-            setGameActive(true);
         } catch (error) {
             handleApiError(error, "start game");
         }
