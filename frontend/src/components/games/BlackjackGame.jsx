@@ -205,28 +205,6 @@ export default function BlackJackGame() {
             // Wait a moment to ensure backend has processed the bet
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Try to force a hit to get player cards
-            try {
-                console.log('Attempting to force initial hit...');
-                await axios.post(
-                    `${import.meta.env.VITE_API_URL}/blackjack/hit/`,
-                    {},
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                        },
-                        timeout: 10000,
-                        withCredentials: true
-                    }
-                );
-            } catch (hitError) {
-                console.log('Hit attempt failed (this might be normal):', hitError.message);
-            }
-
-            // Wait again
-            await new Promise(resolve => setTimeout(resolve, 500));
-
             // Now fetch the game state
             const stateResponse = await axios.get(
                 `${import.meta.env.VITE_API_URL}/blackjack/state/`,
@@ -240,56 +218,14 @@ export default function BlackJackGame() {
                 }
             );
 
-            console.log('Final game state:', stateResponse.data);
+            console.log('Game state after bet:', stateResponse.data);
 
             const gameState = stateResponse.data.game_state;
             if (!gameState) {
                 throw new Error('No game state received after bet');
             }
 
-            // If we still have an invalid state, try one more time with a stay
-            if (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) {
-                console.log('Still invalid state, trying stay...');
-                try {
-                    await axios.post(
-                        `${import.meta.env.VITE_API_URL}/blackjack/stay/`,
-                        {},
-                        {
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                            },
-                            timeout: 10000,
-                            withCredentials: true
-                        }
-                    );
-                    
-                    // Wait and check state one last time
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    const finalStateResponse = await axios.get(
-                        `${import.meta.env.VITE_API_URL}/blackjack/state/`,
-                        {
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                            },
-                            timeout: 10000,
-                            withCredentials: true
-                        }
-                    );
-                    
-                    if (finalStateResponse.data.game_state?.player_hand?.length > 0) {
-                        gameState = finalStateResponse.data.game_state;
-                    } else {
-                        throw new Error('Failed to initialize game properly after all attempts');
-                    }
-                } catch (stayError) {
-                    console.error('Stay attempt failed:', stayError);
-                    throw new Error('Failed to initialize game properly');
-                }
-            }
-
-            // Update the game state
+            // Accept the backend's state as is - it will have dealer cards first
             setPlayerHand(gameState.player_hand || []);
             setDealerHand(gameState.dealer_hand || []);
             setBalance(stateResponse.data.balance || balance);
@@ -299,6 +235,12 @@ export default function BlackJackGame() {
             
             if (stateResponse.data.message) {
                 setGameResult(stateResponse.data.message);
+            }
+
+            // If we have dealer cards but no player cards, this is normal
+            // The backend will deal player cards on the first hit
+            if (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) {
+                console.log('Waiting for player cards - this is normal');
             }
         } catch (error) {
             console.error('Error in startGame:', error);
@@ -363,6 +305,8 @@ export default function BlackJackGame() {
                     rawPlayerHand: data.game_state.player_hand,
                     rawDealerHand: data.game_state.dealer_hand
                 });
+
+                // Accept whatever state the backend gives us
                 setPlayerHand(data.game_state.player_hand || []);
                 setDealerHand(data.game_state.dealer_hand || []);
                 setBalance(data.balance || balance);
@@ -370,19 +314,23 @@ export default function BlackJackGame() {
 
                 if (data.game_state.game_over) {
                     setGameInitialized(false);
+                    setGameActive(false);
                 }
             }
 
             if (data.message) {
                 setGameResult(data.message);
-                setGameInitialized(false);
+                if (data.message.includes("win") || data.message.includes("lose") || data.message.includes("tie")) {
+                    setGameInitialized(false);
+                    setGameActive(false);
+                }
             }
         } catch (error) {
             handleApiError(error, action);
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     // Remove fetchGameState from useEffect to prevent automatic fetching
     useEffect(() => {
