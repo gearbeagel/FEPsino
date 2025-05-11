@@ -113,7 +113,7 @@ export default function DiceGame() {
     const DICE_TYPES = ["d6", "d8", "d12"];
 
     return (
-        <div className="flex-grow flex flex-col items-center p-6">
+        <div className="flex-grow flex flex-col items-center p-6 overflow-y-auto">
             <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
@@ -133,7 +133,7 @@ export default function DiceGame() {
                 </div>
 
                 <h2 className="text-2xl text-center mb-4">Choose Your Dice</h2>
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="grid md:grid-cols-2 grid-cols-1 gap-2 mb-4">
                     {[1, 2].map((idx) => (
                         <div key={idx} className="flex flex-col items-center">
                             <label className="text-sm">Dice {idx}</label>
