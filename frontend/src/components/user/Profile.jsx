@@ -97,7 +97,8 @@ export default function Profile() {
         }
     };
 
-    if (!user) return <div>Loading…</div>;
+    if (!user) return <div></div>;
+
 
     return (
         <div className="flex-grow flex flex-col items-center p-6">

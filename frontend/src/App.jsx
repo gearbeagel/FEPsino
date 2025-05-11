@@ -59,9 +59,9 @@ function App() {
     return (
         <Router>
             <AuthProvider>
-                <div className="h-screen overflow-hidden bg-black text-white flex flex-col">
+                <div className="h-screen md:overflow-hidden bg-black text-white flex flex-col">
                     <Header />
-                    <main className="flex-grow flex flex-col overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-12 pb-4">
+                    <main className="flex-grow flex flex-col md:overflow-hidden bg-gradient-to-b from-gray-900 to-black pt-12 pb-4">
                         <AnimatedRoutes />
                     </main>
                 </div>

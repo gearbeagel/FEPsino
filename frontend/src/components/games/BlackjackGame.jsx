@@ -63,7 +63,7 @@ export default function BlackJackGame() {
             const data = response.data;
 
             if (data.game_state) {
-                if (data.game_state.game_over) {
+                if (data.game_state.game_over || data.game_state.player_hand.length === 0) {
                     setPlayerHand([]);
                     setDealerHand([]);
                     setGameInitialized(false);
@@ -168,7 +168,7 @@ export default function BlackJackGame() {
     }
 
     return (
-        <div className="flex-grow flex flex-col items-center p-6">
+        <div className="flex-grow flex flex-col items-center p-4 sm:p-6">
             <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-6 shadow-xl w-full">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center">
@@ -216,11 +216,11 @@ export default function BlackJackGame() {
 
             {gameActive && (
                 <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-8 shadow-xl w-full mt-8">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col lg:flex-row gap-8">
                         <div className="flex-1">
                             <h2 className="text-2xl text-start mb-4">Dealer's Hand</h2>
-                            <div className="flex justify-center mb-4">
-                                <div className="grid grid-cols-5 gap-4">
+                            <div className="flex mb-4">
+                                <div className="grid grid-cols-5 md:gap-4 gap-16">
                                     {dealerHand.slice(0, 5).map((card, index) => (
                                         <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                             <span className="text-lg font-bold">{card.rank}</span>
@@ -234,10 +234,10 @@ export default function BlackJackGame() {
                                 </div>
                             </div>
                             <h2 className="text-2xl text-start mb-4">Your Hand</h2>
-                            <div className="flex justify-center mb-8">
-                                <div className="grid grid-cols-5 gap-4">
+                            <div className="flex mb-8">
+                                <div className="grid grid-cols-5 md:gap-4 gap-16">
                                     {playerHand.slice(0, 5).map((card, index) => (
-                                        <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
+                                        <div key={index} className="w-16 h-24 p-6 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                             <span className="text-lg font-bold">{card.rank}</span>
                                             {suits[card.suit]}
                                         </div>
@@ -245,20 +245,20 @@ export default function BlackJackGame() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center gap-4 mt-6">
+                        <div className="flex flex-row lg:flex-col justify-center gap-4 lg:mt-0">
                             {gameInitialized && (
                                 <>
                                     <button
                                         onClick={() => handleAction('hit')}
                                         disabled={loading}
-                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
+                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg w-75`}
                                     >
                                         {loading ? 'Loading...' : 'Hit'}
                                     </button>
                                     <button 
                                         onClick={() => handleAction('stay')}
                                         disabled={loading}
-                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
+                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg w-75`}
                                     >
                                         {loading ? 'Loading...' : 'Stand'}
                                     </button>

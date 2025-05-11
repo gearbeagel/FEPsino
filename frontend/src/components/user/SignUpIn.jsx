@@ -87,7 +87,6 @@ export default function SignUpIn() {
             );
 
             if (!isSignUp && res.data.access && res.data.refresh) {
-                // Use the login function from the auth context
                 login(res.data);
                 navigate('/');
             }
@@ -96,6 +95,7 @@ export default function SignUpIn() {
             if (isSignUp) setTimeout(() => setIsSignUp(false), 500);
         } catch (err) {
             setError(err.response?.data?.detail || "Authentication failed");
+            toast.error(error);
             console.log(error);
         }
     };
