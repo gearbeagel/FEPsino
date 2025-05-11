@@ -22,60 +22,25 @@ function getResultColor(result) {
 }
 
 export default function BlackJackGame() {
+    // Core game state
     const [balance, setBalance] = useState(0);
     const [bet, setBet] = useState(10);
-    const [gameInitialized, setGameInitialized] = useState(false);
-    const [gameActive, setGameActive] = useState(false);
     const [playerHand, setPlayerHand] = useState([]);
     const [dealerHand, setDealerHand] = useState([]);
     const [gameResult, setGameResult] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    
+    // Game status flags
+    const [isLoading, setIsLoading] = useState(false);
+    const [canPlay, setCanPlay] = useState(true);
+    const [isGameActive, setIsGameActive] = useState(false);
 
+    // Initialize balance on component mount
     useEffect(() => {
-        fetchGameState();
+        fetchBalance();
     }, []);
 
-    const handleApiError = (error, operation = "operation", customMessage = null) => {
-        setLoading(false);
-        const message = customMessage || error.response?.data?.message || `Failed to ${operation}`;
-        setError(message);
-        toast.error(message);
-        console.error(`Error during ${operation}:`, error);
-    };
-
-    const resetLocalGameState = () => {
-        console.log('=== Resetting Local Game State ===');
-        console.log('Previous state:', {
-            playerHand: playerHand.length,
-            dealerHand: dealerHand.length,
-            gameInitialized,
-            gameActive,
-            bet,
-            balance
-        });
-        setPlayerHand([]);
-        setDealerHand([]);
-        setGameResult(null);
-        setGameInitialized(false);
-        setGameActive(false);
-        setBet(10);
-        console.log('State reset complete');
-    };
-
-    const fetchGameState = async () => {
-        console.log('=== Fetching Game State ===');
-        console.log('Current state:', {
-            bet,
-            balance,
-            gameInitialized,
-            gameActive,
-            playerHand: playerHand.length,
-            dealerHand: dealerHand.length
-        });
-
-        setLoading(true);
-        setError(null);
+    // Fetch current balance
+    const fetchBalance = async () => {
         try {
             const response = await axios.get(
                 `${import.meta.env.VITE_API_URL}/blackjack/state/`,
@@ -84,128 +49,57 @@ export default function BlackJackGame() {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
                     },
-                    timeout: 10000,
                     withCredentials: true
                 }
             );
-
-            console.log('Game state response:', {
-                status: response.status,
-                data: response.data,
-                hasGameState: !!response.data.game_state,
-                message: response.data.message,
-                balance: response.data.balance,
-                bet: response.data.bet
-            });
-
-            const data = response.data;
-
-            if (data.game_state) {
-                const gameState = data.game_state;
-                console.log('Processing game state:', {
-                    playerHand: gameState.player_hand?.length || 0,
-                    dealerHand: gameState.dealer_hand?.length || 0,
-                    gameOver: gameState.game_over,
-                    playerScore: gameState.player_score,
-                    dealerScore: gameState.dealer_score,
-                    bet: data.bet
-                });
-
-                const isInvalidState = (
-                    (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) ||
-                    (data.bet === 0 && !gameState.game_over)
-                );
-
-                if (isInvalidState) {
-                    console.error('Invalid game state detected:', {
-                        dealerHand: gameState.dealer_hand?.length || 0,
-                        playerHand: gameState.player_hand?.length || 0,
-                        bet: data.bet,
-                        gameOver: gameState.game_over
-                    });
-                    resetLocalGameState();
-                    return;
-                }
-
-                if (gameState.game_over) {
-                    resetLocalGameState();
-                } else {
-                    setPlayerHand(gameState.player_hand || []);
-                    setDealerHand(gameState.dealer_hand || []);
-                    setGameInitialized(true);
-                    if ((gameState.player_hand && gameState.player_hand.length > 0) ||
-                        (gameState.dealer_hand && gameState.dealer_hand.length > 0)) {
-                        setGameActive(true);
-                    }
-                }
-                setBalance(data.balance || balance);
-                setBet(Number(data.bet) || bet);
-                if (data.message) {
-                    setGameResult(data.message);
-                }
+            if (response.data.balance !== undefined) {
+                setBalance(response.data.balance);
             }
         } catch (error) {
-            console.error('Error in fetchGameState:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                headers: error.response?.headers
-            });
-            const message = error.response?.data?.message || "Failed to fetch game state";
-            handleApiError(error, "fetch game state", message);
-        } finally {
-            setLoading(false);
-            console.log('=== Game State Fetch Complete ===');
-            console.log('Final state:', {
-                bet,
-                balance,
-                gameInitialized,
-                gameActive,
-                playerHand: playerHand.length,
-                dealerHand: dealerHand.length
-            });
+            console.error('Failed to fetch balance:', error);
+            toast.error('Failed to fetch balance');
         }
     };
 
-    const startGame = async () => {
-        console.log('=== Starting New Game ===');
-        console.log('Initial state:', {
-            bet,
-            balance,
-            gameInitialized,
-            gameActive,
-            playerHand: playerHand.length,
-            dealerHand: dealerHand.length
-        });
+    // Reset game state
+    const resetGame = () => {
+        setPlayerHand([]);
+        setDealerHand([]);
+        setGameResult(null);
+        setCanPlay(true);
+        setIsGameActive(false);
+        setBet(10);
+    };
 
-        setLoading(true);
-        setError(null);
-        resetLocalGameState();
+    // Start new game
+    const startGame = async () => {
+        if (!canPlay || isLoading) return;
+
+        setIsLoading(true);
+        resetGame();
 
         try {
-            // Place the bet
-            const requestData = { amount: bet };
-            console.log('Sending bet request:', requestData);
-
+            // Place bet
             const betResponse = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                requestData,
+                { amount: bet.toString() },
                 {
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
                     },
-                    timeout: 10000,
                     withCredentials: true
                 }
             );
 
-            console.log('Bet response:', betResponse.data);
+            if (betResponse.data.message !== 'Bet placed and game started') {
+                throw new Error(betResponse.data.message || 'Failed to start game');
+            }
 
-            // Wait a moment to ensure backend has processed the bet
+            // Wait for backend to process
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Now fetch the game state
+            // Get initial game state
             const stateResponse = await axios.get(
                 `${import.meta.env.VITE_API_URL}/blackjack/state/`,
                 {
@@ -213,67 +107,44 @@ export default function BlackJackGame() {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
                     },
-                    timeout: 10000,
                     withCredentials: true
                 }
             );
 
-            console.log('Game state after bet:', stateResponse.data);
+            const { game_state, balance: newBalance } = stateResponse.data;
 
-            const gameState = stateResponse.data.game_state;
-            if (!gameState) {
-                throw new Error('No game state received after bet');
+            if (!game_state) {
+                throw new Error('No game state received');
             }
 
-            // Accept the backend's state as is - it will have dealer cards first
-            setPlayerHand(gameState.player_hand || []);
-            setDealerHand(gameState.dealer_hand || []);
-            setBalance(stateResponse.data.balance || balance);
-            setBet(Number(stateResponse.data.bet) || bet);
-            setGameInitialized(true);
-            setGameActive(true);
-            
-            if (stateResponse.data.message) {
-                setGameResult(stateResponse.data.message);
+            // Update game state
+            setPlayerHand(game_state.player_hand || []);
+            setDealerHand(game_state.dealer_hand || []);
+            setBalance(newBalance);
+            setIsGameActive(true);
+            setCanPlay(false);
+
+            // If no player cards, make initial hit
+            if (game_state.dealer_hand?.length > 0 && (!game_state.player_hand || game_state.player_hand.length === 0)) {
+                await handleAction('hit');
             }
 
-            // If we have dealer cards but no player cards, this is normal
-            // The backend will deal player cards on the first hit
-            if (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) {
-                console.log('Waiting for player cards - this is normal');
-            }
         } catch (error) {
-            console.error('Error in startGame:', error);
-            handleApiError(error, "start game");
-            resetLocalGameState();
+            console.error('Game start error:', error);
+            toast.error(error.message || 'Failed to start game');
+            resetGame();
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
+    // Handle game actions (hit/stay)
     const handleAction = async (action) => {
-        setLoading(true);
-        setError(null);
-        console.log(`=== Handling ${action} action ===`);
-        console.log('Current state before action:', {
-            bet,
-            balance,
-            gameInitialized,
-            gameActive,
-            playerHand: playerHand.length,
-            dealerHand: dealerHand.length
-        });
+        if (!isGameActive || isLoading) return;
+
+        setIsLoading(true);
 
         try {
-            console.log(`Sending ${action} request:`, {
-                url: `${import.meta.env.VITE_API_URL}/blackjack/${action}/`,
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                }
-            });
-
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/${action}/`,
                 {},
@@ -282,81 +153,41 @@ export default function BlackJackGame() {
                         "Content-Type": "application/json",
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
                     },
-                    timeout: 10000,
                     withCredentials: true
                 }
             );
 
-            console.log(`Raw ${action} response:`, {
-                status: response.status,
-                statusText: response.statusText,
-                headers: response.headers,
-                data: response.data
-            });
+            const { game_state, balance: newBalance, message } = response.data;
 
-            const data = response.data;
-            if (data.game_state) {
-                console.log('Game state from action response:', {
-                    playerHand: data.game_state.player_hand?.length || 0,
-                    dealerHand: data.game_state.dealer_hand?.length || 0,
-                    gameOver: data.game_state.game_over,
-                    playerScore: data.game_state.player_score,
-                    dealerScore: data.game_state.dealer_score,
-                    rawPlayerHand: data.game_state.player_hand,
-                    rawDealerHand: data.game_state.dealer_hand
-                });
-
-                // Accept whatever state the backend gives us
-                setPlayerHand(data.game_state.player_hand || []);
-                setDealerHand(data.game_state.dealer_hand || []);
-                setBalance(data.balance || balance);
-                setBet(Number(data.bet) || bet);
-
-                if (data.game_state.game_over) {
-                    setGameInitialized(false);
-                    setGameActive(false);
-                }
+            if (!game_state) {
+                throw new Error('No game state received');
             }
 
-            if (data.message) {
-                setGameResult(data.message);
-                if (data.message.includes("win") || data.message.includes("lose") || data.message.includes("tie")) {
-                    setGameInitialized(false);
-                    setGameActive(false);
-                }
+            // Update game state
+            setPlayerHand(game_state.player_hand || []);
+            setDealerHand(game_state.dealer_hand || []);
+            setBalance(newBalance);
+
+            // Handle game over
+            if (game_state.game_over || message?.includes('win') || message?.includes('lose') || message?.includes('tie')) {
+                setGameResult(message);
+                setIsGameActive(false);
+                setCanPlay(true);
             }
+
         } catch (error) {
-            handleApiError(error, action);
+            console.error(`${action} action error:`, error);
+            toast.error(`Failed to ${action}`);
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
-    // Remove fetchGameState from useEffect to prevent automatic fetching
-    useEffect(() => {
-        // Only fetch initial balance
-        const fetchBalance = async () => {
-            try {
-                const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/blackjack/state/`,
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                        },
-                        timeout: 10000,
-                        withCredentials: true
-                    }
-                );
-                if (response.data.balance !== undefined) {
-                    setBalance(response.data.balance);
-                }
-            } catch (error) {
-                console.error('Error fetching balance:', error);
-            }
-        };
-        fetchBalance();
-    }, []);
+    // Handle bet change
+    const handleBetChange = (e) => {
+        if (!canPlay) return;
+        setBet(Number(e.target.value));
+    };
 
     return (
         <div className="flex-grow flex flex-col items-center p-6">
@@ -368,25 +199,24 @@ export default function BlackJackGame() {
                     </div>
                     <span className="text-xl text-yellow-400 group relative">
                         <InfoIcon className="h-6 w-6 mr-2" />
-                            <span
-                                className="absolute bottom-full right-1/2 transform translate-x-6 mb-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                Place your bet and start the game. You can hit or stand during your turn, and the dealer will play after you.
-                                <br/>
-                                The goal is to get as close to 21 as possible without going over. If you go over, you lose.
-                                <br/>
-                                If the dealer goes over, you win! If you both have the same score, it's a tie.
-                            </span>
+                        <span className="absolute bottom-full right-1/2 transform translate-x-6 mb-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Place your bet and start the game. You can hit or stand during your turn, and the dealer will play after you.
+                            <br/>
+                            The goal is to get as close to 21 as possible without going over. If you go over, you lose.
+                            <br/>
+                            If the dealer goes over, you win! If you both have the same score, it's a tie.
+                        </span>
                     </span>
                 </div>
+
                 <div className="flex gap-4 items-center mt-6">
                     <div className="flex-1">
                         <label className="block text-sm mb-1">Bet Amount</label>
                         <select
                             value={bet}
-                            onChange={(e) => setBet(Number(e.target.value))}
-                            disabled={gameInitialized || loading}
-                            className={`w-full bg-gray-700 rounded p-2 text-white ${(gameInitialized || loading) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onChange={handleBetChange}
+                            disabled={!canPlay || isLoading}
+                            className={`w-full bg-gray-700 rounded p-2 text-white ${(!canPlay || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <option value="10">$10</option>
                             <option value="20">$20</option>
@@ -395,39 +225,36 @@ export default function BlackJackGame() {
                         </select>
                     </div>
                 </div>
+
                 <button
                     onClick={startGame}
-                    disabled={loading || gameInitialized}
-                    className={`w-full px-4 py-2 ${loading || gameInitialized ? 'bg-gray-400' : 'bg-yellow-400 hover:bg-yellow-500'} rounded-lg text-black flex items-center justify-center text-xl font-bold transition-colors mt-5`}
+                    disabled={isLoading || !canPlay}
+                    className={`w-full px-4 py-2 ${isLoading || !canPlay ? 'bg-gray-400' : 'bg-yellow-400 hover:bg-yellow-500'} rounded-lg text-black flex items-center justify-center text-xl font-bold transition-colors mt-5`}
                 >
                     <Play className="h-6 w-6 mr-2" />
-                    {loading ? 'Loading...' : gameInitialized ? 'Game in Progress' : 'Start Game'}
+                    {isLoading ? 'Loading...' : !canPlay ? 'Game in Progress' : 'Start Game'}
                 </button>
             </div>
 
-            {gameActive && (
+            {(isGameActive || gameResult) && (
                 <div className="container max-w-4xl bg-slate-900 border border-yellow-400 rounded-lg p-8 shadow-xl w-full mt-8">
                     <div className="flex gap-4">
                         <div className="flex-1">
                             <h2 className="text-2xl text-start mb-4">Dealer's Hand</h2>
                             <div className="flex justify-center mb-4">
                                 <div className="grid grid-cols-5 gap-4">
-                                    {dealerHand.slice(0, 5).map((card, index) => (
+                                    {dealerHand.map((card, index) => (
                                         <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                             <span className="text-lg font-bold">{card.rank}</span>
                                             {suits[card.suit]}
                                         </div>
                                     ))}
-                                    {dealerHand.length < 2 && (
-                                        <div className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                             <h2 className="text-2xl text-start mb-4">Your Hand</h2>
                             <div className="flex justify-center mb-8">
                                 <div className="grid grid-cols-5 gap-4">
-                                    {playerHand.slice(0, 5).map((card, index) => (
+                                    {playerHand.map((card, index) => (
                                         <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                             <span className="text-lg font-bold">{card.rank}</span>
                                             {suits[card.suit]}
@@ -437,29 +264,42 @@ export default function BlackJackGame() {
                             </div>
                         </div>
                         <div className="flex-1 flex flex-col justify-center gap-4 mt-6">
-                            {gameInitialized && (
+                            {isGameActive && (
                                 <>
                                     <button
                                         onClick={() => handleAction('hit')}
-                                        disabled={loading}
-                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
+                                        disabled={isLoading}
+                                        className={`px-6 py-3 ${isLoading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
                                     >
-                                        {loading ? 'Loading...' : 'Hit'}
+                                        {isLoading ? 'Loading...' : 'Hit'}
                                     </button>
                                     <button 
                                         onClick={() => handleAction('stay')}
-                                        disabled={loading}
-                                        className={`px-6 py-3 ${loading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
+                                        disabled={isLoading}
+                                        className={`px-6 py-3 ${isLoading ? 'bg-gray-400' : 'bg-yellow-400'} rounded-lg text-black text-lg`}
                                     >
-                                        {loading ? 'Loading...' : 'Stand'}
+                                        {isLoading ? 'Loading...' : 'Stand'}
                                     </button>
                                 </>
                             )}
-                            {gameResult && <h2 className={`text-2xl text-center mb-4 ${getResultColor(gameResult)}`}>{gameResult}</h2>}
+                            {gameResult && (
+                                <div className="mt-4 p-4 bg-slate-800 rounded-lg">
+                                    <h2 className={`text-2xl text-center ${getResultColor(gameResult)}`}>{gameResult}</h2>
+                                    <button
+                                        onClick={startGame}
+                                        disabled={isLoading || !canPlay}
+                                        className={`w-full mt-4 px-4 py-2 ${isLoading || !canPlay ? 'bg-gray-400' : 'bg-yellow-400 hover:bg-yellow-500'} rounded-lg text-black flex items-center justify-center text-xl font-bold transition-colors`}
+                                    >
+                                        <Play className="h-6 w-6 mr-2" />
+                                        {isLoading ? 'Loading...' : 'Play Again'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
+
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
