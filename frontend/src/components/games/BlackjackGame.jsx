@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {Club, Play, RotateCcw, Heart, Diamond, Spade, AlertCircle, InfoIcon} from "lucide-react";
+import {Club, Play, Heart, Diamond, Spade, InfoIcon} from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 
@@ -22,24 +22,21 @@ function getResultColor(result) {
 }
 
 export default function BlackJackGame() {
-    // Core game state
     const [balance, setBalance] = useState(0);
     const [bet, setBet] = useState(10);
     const [playerHand, setPlayerHand] = useState([]);
     const [dealerHand, setDealerHand] = useState([]);
     const [gameResult, setGameResult] = useState(null);
     
-    // Game status flags
     const [isLoading, setIsLoading] = useState(false);
     const [canPlay, setCanPlay] = useState(true);
     const [isGameActive, setIsGameActive] = useState(false);
 
-    // Initialize balance on component mount
     useEffect(() => {
         fetchBalance();
+        fetchGameState();
     }, []);
 
-    // Fetch current balance
     const fetchBalance = async () => {
         try {
             const response = await axios.get(
@@ -61,7 +58,38 @@ export default function BlackJackGame() {
         }
     };
 
-    // Reset game state
+    const fetchGameState = async () => {
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL}/blackjack/state/`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                    },
+                    withCredentials: true
+                }
+            );
+            
+            const { game_state, balance: newBalance } = response.data;
+            
+            setBalance(newBalance);
+            
+            if (game_state && !game_state.game_over && (game_state.player_hand?.length > 0 || game_state.dealer_hand?.length > 0)) {
+                setPlayerHand(game_state.player_hand || []);
+                setDealerHand(game_state.dealer_hand || []);
+                setIsGameActive(true);
+                setCanPlay(false);
+            } else {
+                resetGame();
+            }
+        } catch (error) {
+            console.error('Failed to fetch game state:', error);
+            toast.error('Failed to fetch game state');
+            resetGame();
+        }
+    };
+
     const resetGame = () => {
         setPlayerHand([]);
         setDealerHand([]);
@@ -71,7 +99,6 @@ export default function BlackJackGame() {
         setBet(10);
     };
 
-    // Start new game
     const startGame = async () => {
         if (!canPlay || isLoading) return;
 
@@ -79,7 +106,6 @@ export default function BlackJackGame() {
         resetGame();
 
         try {
-            // Place bet
             const betResponse = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
                 { amount: bet.toString() },
@@ -96,10 +122,8 @@ export default function BlackJackGame() {
                 throw new Error(betResponse.data.message || 'Failed to start game');
             }
 
-            // Wait for backend to process
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Get initial game state
             const stateResponse = await axios.get(
                 `${import.meta.env.VITE_API_URL}/blackjack/state/`,
                 {
@@ -117,14 +141,12 @@ export default function BlackJackGame() {
                 throw new Error('No game state received');
             }
 
-            // Update game state
             setPlayerHand(game_state.player_hand || []);
             setDealerHand(game_state.dealer_hand || []);
             setBalance(newBalance);
             setIsGameActive(true);
             setCanPlay(false);
 
-            // If no player cards, make initial hit
             if (game_state.dealer_hand?.length > 0 && (!game_state.player_hand || game_state.player_hand.length === 0)) {
                 await handleAction('hit');
             }
@@ -138,7 +160,6 @@ export default function BlackJackGame() {
         }
     };
 
-    // Handle game actions (hit/stay)
     const handleAction = async (action) => {
         if (!isGameActive || isLoading) return;
 
@@ -163,12 +184,10 @@ export default function BlackJackGame() {
                 throw new Error('No game state received');
             }
 
-            // Update game state
             setPlayerHand(game_state.player_hand || []);
             setDealerHand(game_state.dealer_hand || []);
             setBalance(newBalance);
 
-            // Handle game over
             if (game_state.game_over || message?.includes('win') || message?.includes('lose') || message?.includes('tie')) {
                 setGameResult(message);
                 setIsGameActive(false);
@@ -183,7 +202,6 @@ export default function BlackJackGame() {
         }
     };
 
-    // Handle bet change
     const handleBetChange = (e) => {
         if (!canPlay) return;
         setBet(Number(e.target.value));
