@@ -183,11 +183,11 @@ export default function BlackJackGame() {
         resetLocalGameState();
 
         try {
-            // First, make sure we're starting fresh
+            // Place the bet
             const requestData = { amount: bet };
             console.log('Sending bet request:', requestData);
 
-            const response = await axios.post(
+            const betResponse = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
                 requestData,
                 {
@@ -200,9 +200,31 @@ export default function BlackJackGame() {
                 }
             );
 
-            console.log('Bet response:', response.data);
+            console.log('Bet response:', betResponse.data);
 
             // Wait a moment to ensure backend has processed the bet
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Try to force a hit to get player cards
+            try {
+                console.log('Attempting to force initial hit...');
+                await axios.post(
+                    `${import.meta.env.VITE_API_URL}/blackjack/hit/`,
+                    {},
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        },
+                        timeout: 10000,
+                        withCredentials: true
+                    }
+                );
+            } catch (hitError) {
+                console.log('Hit attempt failed (this might be normal):', hitError.message);
+            }
+
+            // Wait again
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // Now fetch the game state
@@ -218,50 +240,53 @@ export default function BlackJackGame() {
                 }
             );
 
-            console.log('Game state after bet:', stateResponse.data);
+            console.log('Final game state:', stateResponse.data);
 
             const gameState = stateResponse.data.game_state;
             if (!gameState) {
                 throw new Error('No game state received after bet');
             }
 
-            // Validate the game state
+            // If we still have an invalid state, try one more time with a stay
             if (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) {
-                console.error('Invalid game state: Dealer has cards but player doesn\'t');
-                // Try to force a new game by making another bet request
-                await axios.post(
-                    `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                    { amount: bet },
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                        },
-                        timeout: 10000,
-                        withCredentials: true
+                console.log('Still invalid state, trying stay...');
+                try {
+                    await axios.post(
+                        `${import.meta.env.VITE_API_URL}/blackjack/stay/`,
+                        {},
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                            },
+                            timeout: 10000,
+                            withCredentials: true
+                        }
+                    );
+                    
+                    // Wait and check state one last time
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const finalStateResponse = await axios.get(
+                        `${import.meta.env.VITE_API_URL}/blackjack/state/`,
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                            },
+                            timeout: 10000,
+                            withCredentials: true
+                        }
+                    );
+                    
+                    if (finalStateResponse.data.game_state?.player_hand?.length > 0) {
+                        gameState = finalStateResponse.data.game_state;
+                    } else {
+                        throw new Error('Failed to initialize game properly after all attempts');
                     }
-                );
-                // Wait again
-                await new Promise(resolve => setTimeout(resolve, 500));
-                // Fetch state again
-                const retryResponse = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/blackjack/state/`,
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                        },
-                        timeout: 10000,
-                        withCredentials: true
-                    }
-                );
-                console.log('Game state after retry:', retryResponse.data);
-                
-                if (!retryResponse.data.game_state?.player_hand?.length) {
+                } catch (stayError) {
+                    console.error('Stay attempt failed:', stayError);
                     throw new Error('Failed to initialize game properly');
                 }
-                
-                gameState = retryResponse.data.game_state;
             }
 
             // Update the game state
