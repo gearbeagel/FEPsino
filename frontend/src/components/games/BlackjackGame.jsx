@@ -44,6 +44,15 @@ export default function BlackJackGame() {
         console.error(`Error during ${operation}:`, error);
     };
 
+    const resetLocalGameState = () => {
+        setPlayerHand([]);
+        setDealerHand([]);
+        setGameResult(null);
+        setGameInitialized(false);
+        setGameActive(false);
+        setBet(10); // Reset to default bet
+    };
+
     const fetchGameState = async () => {
         setLoading(true);
         setError(null);
@@ -63,12 +72,22 @@ export default function BlackJackGame() {
             const data = response.data;
 
             if (data.game_state) {
+                // Check for invalid game state
+                const isInvalidState = (
+                    // Dealer has cards but player doesn't
+                    (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) ||
+                    // Bet is 0 but game is not over
+                    (data.bet === 0 && !data.game_state.game_over)
+                );
+
+                if (isInvalidState) {
+                    console.log('Invalid game state detected, resetting local state...');
+                    resetLocalGameState();
+                    return;
+                }
+
                 if (data.game_state.game_over) {
-                    setPlayerHand([]);
-                    setDealerHand([]);
-                    setGameInitialized(false);
-                    setGameActive(false);
-                    setGameResult(null);
+                    resetLocalGameState();
                 } else {
                     setPlayerHand(data.game_state.player_hand || []);
                     setDealerHand(data.game_state.dealer_hand || []);
@@ -95,11 +114,9 @@ export default function BlackJackGame() {
     const startGame = async () => {
         setLoading(true);
         setError(null);
-        setPlayerHand([]);
-        setDealerHand([]);
-        setGameResult(null);
-        setGameInitialized(false);
-        setGameActive(false);
+        
+        // Reset local state before starting
+        resetLocalGameState();
 
         try {
             const response = await axios.post(
@@ -116,6 +133,13 @@ export default function BlackJackGame() {
             );
 
             if (response.data.game_state) {
+                // Validate the game state
+                if (!response.data.game_state.player_hand?.length || !response.data.game_state.dealer_hand?.length) {
+                    console.log('Invalid game state after bet, resetting local state...');
+                    resetLocalGameState();
+                    return;
+                }
+
                 setPlayerHand(response.data.game_state.player_hand || []);
                 setDealerHand(response.data.game_state.dealer_hand || []);
                 setBalance(response.data.balance || balance);
