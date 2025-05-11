@@ -242,18 +242,30 @@ export default function BlackJackGame() {
                         <div className="flex-1">
                             <h2 className="text-2xl text-start mb-4">Dealer's Hand</h2>
                             <div className="flex justify-center mb-4">
-                                <div className="grid grid-cols-5 gap-4">
-                                    {dealerHand.map((card, index) => (
-                                        <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
-                                            <span className="text-lg font-bold">{card.rank}</span>
-                                            {suits[card.suit]}
-                                        </div>
-                                    ))}
+                                <div className="grid grid-cols-5 md:gap-4 gap-20">
+                                    {(dealerHand.length === 1)
+                                        ? (
+                                            <>
+                                                <div className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
+                                                    <span className="text-lg font-bold">{dealerHand[0].rank}</span>
+                                                    {suits[dealerHand[0].suit]}
+                                                </div>
+                                                <div className="w-16 h-24 p-4 bg-white rounded-lg shadow flex flex-col items-center justify-center">
+                                                </div>
+                                            </>
+                                        )
+                                        : dealerHand.map((card, index) => (
+                                            <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
+                                                <span className="text-lg font-bold">{card.rank}</span>
+                                                {suits[card.suit]}
+                                            </div>
+                                        ))
+                                    }
                                 </div>
                             </div>
                             <h2 className="text-2xl text-start mb-4">Your Hand</h2>
                             <div className="flex justify-center mb-8">
-                                <div className="grid grid-cols-5 gap-4">
+                                <div className="grid grid-cols-5 md:gap-4 gap-20">
                                     {playerHand.map((card, index) => (
                                         <div key={index} className="w-16 h-24 p-4 bg-white rounded-lg shadow text-black flex flex-col items-center">
                                             <span className="text-lg font-bold">{card.rank}</span>
@@ -283,16 +295,8 @@ export default function BlackJackGame() {
                                 </>
                             )}
                             {gameResult && (
-                                <div className="mt-4 p-4 bg-slate-800 rounded-lg">
+                                <div className="mt-4 p-4">
                                     <h2 className={`text-2xl text-center ${getResultColor(gameResult)}`}>{gameResult}</h2>
-                                    <button
-                                        onClick={startGame}
-                                        disabled={isLoading || !canPlay}
-                                        className={`w-full mt-4 px-4 py-2 ${isLoading || !canPlay ? 'bg-gray-400' : 'bg-yellow-400 hover:bg-yellow-500'} rounded-lg text-black flex items-center justify-center text-xl font-bold transition-colors`}
-                                    >
-                                        <Play className="h-6 w-6 mr-2" />
-                                        {isLoading ? 'Loading...' : 'Play Again'}
-                                    </button>
                                 </div>
                             )}
                         </div>
