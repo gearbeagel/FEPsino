@@ -49,6 +49,7 @@ export default function BlackJackGame() {
         setLoading(true);
         setError(null);
         try {
+            console.log('Fetching game state...');
             const response = await axios.get(
                 `${import.meta.env.VITE_API_URL}/blackjack/state/`,
                 {
@@ -61,9 +62,17 @@ export default function BlackJackGame() {
                 }
             );
 
+            console.log('Game state response:', response.data);
             const data = response.data;
 
             if (data.game_state) {
+                console.log('Current game state:', {
+                    playerHand: data.game_state.player_hand,
+                    dealerHand: data.game_state.dealer_hand,
+                    gameOver: data.game_state.game_over,
+                    playerScore: data.game_state.player_score,
+                    dealerScore: data.game_state.dealer_score
+                });
                 if (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) {
                     setPlayerHand([]);
                     setDealerHand([]);
@@ -103,6 +112,7 @@ export default function BlackJackGame() {
     const startGame = async () => {
         setLoading(true);
         setError(null);
+        console.log('Starting new game with bet:', bet);
 
         setPlayerHand([]);
         setDealerHand([]);
@@ -111,6 +121,7 @@ export default function BlackJackGame() {
         setGameActive(false);
 
         try {
+            console.log('Making bet request...');
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
                 { amount: bet.toString() },
@@ -123,9 +134,11 @@ export default function BlackJackGame() {
                     withCredentials: true
                 }
             );
+            console.log('Bet response:', response.data);
 
             await fetchGameState();
         } catch (error) {
+            console.error('Error starting game:', error);
             handleApiError(error, "start game");
         }
     };
@@ -133,6 +146,7 @@ export default function BlackJackGame() {
     const handleAction = async (action) => {
         setLoading(true);
         setError(null);
+        console.log(`Handling ${action} action...`);
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/${action}/`,
@@ -146,6 +160,7 @@ export default function BlackJackGame() {
                     withCredentials: true
                 }
             );
+            console.log(`${action} response:`, response.data);
 
             const data = response.data;
 
