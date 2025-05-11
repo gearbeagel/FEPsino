@@ -66,19 +66,42 @@ export default function BlackJackGame() {
             const data = response.data;
 
             if (data.game_state) {
-                console.log('Current game state:', {
-                    playerHand: data.game_state.player_hand,
-                    dealerHand: data.game_state.dealer_hand,
-                    gameOver: data.game_state.game_over,
-                    playerScore: data.game_state.player_score,
-                    dealerScore: data.game_state.dealer_score
-                });
-                if (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) {
+                // Check for invalid game states
+                const isInvalidState = (
+                    // Dealer has cards but player doesn't
+                    (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) ||
+                    // Bet is 0 but game is not over
+                    (data.bet === 0 && !data.game_state.game_over) ||
+                    // Player has no cards but game is not over
+                    (!data.game_state.player_hand?.length && !data.game_state.game_over)
+                );
+
+                if (isInvalidState) {
+                    console.log('Detected invalid game state, resetting game');
                     setPlayerHand([]);
                     setDealerHand([]);
                     setGameInitialized(false);
                     setGameActive(false);
                     setGameResult(null);
+                    setBet(10); // Reset bet to default
+                    
+                    // Try to reset the game on the server
+                    try {
+                        await axios.post(
+                            `${import.meta.env.VITE_API_URL}/blackjack/reset/`,
+                            {},
+                            {
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                                },
+                                timeout: 10000,
+                                withCredentials: true
+                            }
+                        );
+                    } catch (error) {
+                        console.error('Failed to reset game on server:', error);
+                    }
                 } else if (data.game_state.game_over) {
                     setPlayerHand([]);
                     setDealerHand([]);
@@ -98,8 +121,13 @@ export default function BlackJackGame() {
                     }
                 }
 
-                setBalance(data.balance || 0);
-                setBet(data.bet || 10);
+                // Only update balance and bet if they are valid
+                if (typeof data.balance === 'number' && data.balance >= 0) {
+                    setBalance(data.balance);
+                }
+                if (typeof data.bet === 'number' && data.bet > 0) {
+                    setBet(data.bet);
+                }
             }
             setLoading(false);
         } catch (error) {
