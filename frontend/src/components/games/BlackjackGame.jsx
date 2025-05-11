@@ -67,8 +67,6 @@ export default function BlackJackGame() {
             if (data.game_state) {
                 // Check for invalid game states
                 const isInvalidState = (
-                    // Dealer has cards but player doesn't
-                    (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) ||
                     // Bet is 0 but game is not over
                     (data.bet === 0 && !data.game_state.game_over) ||
                     // Player has no cards but game is not over
@@ -82,7 +80,6 @@ export default function BlackJackGame() {
                     setGameInitialized(false);
                     setGameActive(false);
                     setGameResult(null);
-                    // Don't reset the bet value here
                 } else if (data.game_state.game_over) {
                     setPlayerHand([]);
                     setDealerHand([]);
