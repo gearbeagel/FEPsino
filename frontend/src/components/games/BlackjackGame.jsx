@@ -183,10 +183,13 @@ export default function BlackJackGame() {
         resetLocalGameState();
 
         try {
-            console.log('Making bet request with amount:', bet);
+            // First, make sure we're starting fresh
+            const requestData = { amount: bet };
+            console.log('Sending bet request:', requestData);
+
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                { amount: bet },
+                requestData,
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -197,70 +200,113 @@ export default function BlackJackGame() {
                 }
             );
 
-            console.log('Bet response:', {
-                status: response.status,
-                data: response.data,
-                hasGameState: !!response.data.game_state,
-                message: response.data.message,
-                balance: response.data.balance,
-                bet: response.data.bet
-            });
+            console.log('Bet response:', response.data);
 
-            if (response.data.game_state) {
-                const gameState = response.data.game_state;
-                console.log('Game state from bet response:', {
-                    playerHand: gameState.player_hand?.length || 0,
-                    dealerHand: gameState.dealer_hand?.length || 0,
-                    gameOver: gameState.game_over,
-                    playerScore: gameState.player_score,
-                    dealerScore: gameState.dealer_score
-                });
+            // Wait a moment to ensure backend has processed the bet
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-                if (!gameState.player_hand?.length || !gameState.dealer_hand?.length) {
-                    console.error('Invalid game state after bet:', gameState);
-                    resetLocalGameState();
-                    return;
+            // Now fetch the game state
+            const stateResponse = await axios.get(
+                `${import.meta.env.VITE_API_URL}/blackjack/state/`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                    },
+                    timeout: 10000,
+                    withCredentials: true
                 }
+            );
 
-                setPlayerHand(gameState.player_hand || []);
-                setDealerHand(gameState.dealer_hand || []);
-                setBalance(response.data.balance || balance);
-                setBet(Number(response.data.bet) || bet);
-                setGameInitialized(true);
-                setGameActive(true);
-                if (response.data.message) {
-                    setGameResult(response.data.message);
+            console.log('Game state after bet:', stateResponse.data);
+
+            const gameState = stateResponse.data.game_state;
+            if (!gameState) {
+                throw new Error('No game state received after bet');
+            }
+
+            // Validate the game state
+            if (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) {
+                console.error('Invalid game state: Dealer has cards but player doesn\'t');
+                // Try to force a new game by making another bet request
+                await axios.post(
+                    `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
+                    { amount: bet },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        },
+                        timeout: 10000,
+                        withCredentials: true
+                    }
+                );
+                // Wait again
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Fetch state again
+                const retryResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/blackjack/state/`,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        },
+                        timeout: 10000,
+                        withCredentials: true
+                    }
+                );
+                console.log('Game state after retry:', retryResponse.data);
+                
+                if (!retryResponse.data.game_state?.player_hand?.length) {
+                    throw new Error('Failed to initialize game properly');
                 }
-            } else {
-                console.log('No game state in bet response, fetching game state...');
-                await fetchGameState();
+                
+                gameState = retryResponse.data.game_state;
+            }
+
+            // Update the game state
+            setPlayerHand(gameState.player_hand || []);
+            setDealerHand(gameState.dealer_hand || []);
+            setBalance(stateResponse.data.balance || balance);
+            setBet(Number(stateResponse.data.bet) || bet);
+            setGameInitialized(true);
+            setGameActive(true);
+            
+            if (stateResponse.data.message) {
+                setGameResult(stateResponse.data.message);
             }
         } catch (error) {
-            console.error('Error in startGame:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                headers: error.response?.headers
-            });
+            console.error('Error in startGame:', error);
             handleApiError(error, "start game");
+            resetLocalGameState();
         } finally {
             setLoading(false);
-            console.log('=== Game Start Complete ===');
-            console.log('Final state:', {
-                bet,
-                balance,
-                gameInitialized,
-                gameActive,
-                playerHand: playerHand.length,
-                dealerHand: dealerHand.length
-            });
         }
     };
 
     const handleAction = async (action) => {
         setLoading(true);
         setError(null);
+        console.log(`=== Handling ${action} action ===`);
+        console.log('Current state before action:', {
+            bet,
+            balance,
+            gameInitialized,
+            gameActive,
+            playerHand: playerHand.length,
+            dealerHand: dealerHand.length
+        });
+
         try {
+            console.log(`Sending ${action} request:`, {
+                url: `${import.meta.env.VITE_API_URL}/blackjack/${action}/`,
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                }
+            });
+
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/${action}/`,
                 {},
@@ -274,9 +320,24 @@ export default function BlackJackGame() {
                 }
             );
 
-            const data = response.data;
+            console.log(`Raw ${action} response:`, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                data: response.data
+            });
 
+            const data = response.data;
             if (data.game_state) {
+                console.log('Game state from action response:', {
+                    playerHand: data.game_state.player_hand?.length || 0,
+                    dealerHand: data.game_state.dealer_hand?.length || 0,
+                    gameOver: data.game_state.game_over,
+                    playerScore: data.game_state.player_score,
+                    dealerScore: data.game_state.dealer_score,
+                    rawPlayerHand: data.game_state.player_hand,
+                    rawDealerHand: data.game_state.dealer_hand
+                });
                 setPlayerHand(data.game_state.player_hand || []);
                 setDealerHand(data.game_state.dealer_hand || []);
                 setBalance(data.balance || balance);
@@ -297,6 +358,32 @@ export default function BlackJackGame() {
             setLoading(false);
         }
     }
+
+    // Remove fetchGameState from useEffect to prevent automatic fetching
+    useEffect(() => {
+        // Only fetch initial balance
+        const fetchBalance = async () => {
+            try {
+                const response = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/blackjack/state/`,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        },
+                        timeout: 10000,
+                        withCredentials: true
+                    }
+                );
+                if (response.data.balance !== undefined) {
+                    setBalance(response.data.balance);
+                }
+            } catch (error) {
+                console.error('Error fetching balance:', error);
+            }
+        };
+        fetchBalance();
+    }, []);
 
     return (
         <div className="flex-grow flex flex-col items-center p-6">
