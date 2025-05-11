@@ -45,15 +45,35 @@ export default function BlackJackGame() {
     };
 
     const resetLocalGameState = () => {
+        console.log('=== Resetting Local Game State ===');
+        console.log('Previous state:', {
+            playerHand: playerHand.length,
+            dealerHand: dealerHand.length,
+            gameInitialized,
+            gameActive,
+            bet,
+            balance
+        });
         setPlayerHand([]);
         setDealerHand([]);
         setGameResult(null);
         setGameInitialized(false);
         setGameActive(false);
-        setBet(10); // Reset to default bet
+        setBet(10);
+        console.log('State reset complete');
     };
 
     const fetchGameState = async () => {
+        console.log('=== Fetching Game State ===');
+        console.log('Current state:', {
+            bet,
+            balance,
+            gameInitialized,
+            gameActive,
+            playerHand: playerHand.length,
+            dealerHand: dealerHand.length
+        });
+
         setLoading(true);
         setError(null);
         try {
@@ -69,31 +89,52 @@ export default function BlackJackGame() {
                 }
             );
 
+            console.log('Game state response:', {
+                status: response.status,
+                data: response.data,
+                hasGameState: !!response.data.game_state,
+                message: response.data.message,
+                balance: response.data.balance,
+                bet: response.data.bet
+            });
+
             const data = response.data;
 
             if (data.game_state) {
-                // Check for invalid game state
+                const gameState = data.game_state;
+                console.log('Processing game state:', {
+                    playerHand: gameState.player_hand?.length || 0,
+                    dealerHand: gameState.dealer_hand?.length || 0,
+                    gameOver: gameState.game_over,
+                    playerScore: gameState.player_score,
+                    dealerScore: gameState.dealer_score,
+                    bet: data.bet
+                });
+
                 const isInvalidState = (
-                    // Dealer has cards but player doesn't
-                    (data.game_state.dealer_hand?.length > 0 && (!data.game_state.player_hand || data.game_state.player_hand.length === 0)) ||
-                    // Bet is 0 but game is not over
-                    (data.bet === 0 && !data.game_state.game_over)
+                    (gameState.dealer_hand?.length > 0 && (!gameState.player_hand || gameState.player_hand.length === 0)) ||
+                    (data.bet === 0 && !gameState.game_over)
                 );
 
                 if (isInvalidState) {
-                    console.log('Invalid game state detected, resetting local state...');
+                    console.error('Invalid game state detected:', {
+                        dealerHand: gameState.dealer_hand?.length || 0,
+                        playerHand: gameState.player_hand?.length || 0,
+                        bet: data.bet,
+                        gameOver: gameState.game_over
+                    });
                     resetLocalGameState();
                     return;
                 }
 
-                if (data.game_state.game_over) {
+                if (gameState.game_over) {
                     resetLocalGameState();
                 } else {
-                    setPlayerHand(data.game_state.player_hand || []);
-                    setDealerHand(data.game_state.dealer_hand || []);
+                    setPlayerHand(gameState.player_hand || []);
+                    setDealerHand(gameState.dealer_hand || []);
                     setGameInitialized(true);
-                    if ((data.game_state.player_hand && data.game_state.player_hand.length > 0) ||
-                        (data.game_state.dealer_hand && data.game_state.dealer_hand.length > 0)) {
+                    if ((gameState.player_hand && gameState.player_hand.length > 0) ||
+                        (gameState.dealer_hand && gameState.dealer_hand.length > 0)) {
                         setGameActive(true);
                     }
                 }
@@ -104,20 +145,45 @@ export default function BlackJackGame() {
                 }
             }
         } catch (error) {
+            console.error('Error in fetchGameState:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                headers: error.response?.headers
+            });
             const message = error.response?.data?.message || "Failed to fetch game state";
             handleApiError(error, "fetch game state", message);
         } finally {
             setLoading(false);
+            console.log('=== Game State Fetch Complete ===');
+            console.log('Final state:', {
+                bet,
+                balance,
+                gameInitialized,
+                gameActive,
+                playerHand: playerHand.length,
+                dealerHand: dealerHand.length
+            });
         }
     };
 
     const startGame = async () => {
+        console.log('=== Starting New Game ===');
+        console.log('Initial state:', {
+            bet,
+            balance,
+            gameInitialized,
+            gameActive,
+            playerHand: playerHand.length,
+            dealerHand: dealerHand.length
+        });
+
         setLoading(true);
         setError(null);
-        
         resetLocalGameState();
 
         try {
+            console.log('Making bet request with amount:', bet);
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
                 { amount: bet },
@@ -131,15 +197,33 @@ export default function BlackJackGame() {
                 }
             );
 
+            console.log('Bet response:', {
+                status: response.status,
+                data: response.data,
+                hasGameState: !!response.data.game_state,
+                message: response.data.message,
+                balance: response.data.balance,
+                bet: response.data.bet
+            });
+
             if (response.data.game_state) {
-                if (!response.data.game_state.player_hand?.length || !response.data.game_state.dealer_hand?.length) {
-                    console.log('Invalid game state after bet, resetting local state...');
+                const gameState = response.data.game_state;
+                console.log('Game state from bet response:', {
+                    playerHand: gameState.player_hand?.length || 0,
+                    dealerHand: gameState.dealer_hand?.length || 0,
+                    gameOver: gameState.game_over,
+                    playerScore: gameState.player_score,
+                    dealerScore: gameState.dealer_score
+                });
+
+                if (!gameState.player_hand?.length || !gameState.dealer_hand?.length) {
+                    console.error('Invalid game state after bet:', gameState);
                     resetLocalGameState();
                     return;
                 }
 
-                setPlayerHand(response.data.game_state.player_hand || []);
-                setDealerHand(response.data.game_state.dealer_hand || []);
+                setPlayerHand(gameState.player_hand || []);
+                setDealerHand(gameState.dealer_hand || []);
                 setBalance(response.data.balance || balance);
                 setBet(Number(response.data.bet) || bet);
                 setGameInitialized(true);
@@ -148,12 +232,28 @@ export default function BlackJackGame() {
                     setGameResult(response.data.message);
                 }
             } else {
+                console.log('No game state in bet response, fetching game state...');
                 await fetchGameState();
             }
         } catch (error) {
+            console.error('Error in startGame:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                headers: error.response?.headers
+            });
             handleApiError(error, "start game");
         } finally {
             setLoading(false);
+            console.log('=== Game Start Complete ===');
+            console.log('Final state:', {
+                bet,
+                balance,
+                gameInitialized,
+                gameActive,
+                playerHand: playerHand.length,
+                dealerHand: dealerHand.length
+            });
         }
     };
 
