@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {Club, Play, RotateCcw, Heart, Diamond, Spade, AlertCircle, InfoIcon} from "lucide-react";
+import { Club, Play, Heart, Diamond, Spade, InfoIcon } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 
@@ -44,7 +44,6 @@ export default function BlackJackGame() {
         console.error(`Error during ${operation}:`, error);
     };
 
-
     const fetchGameState = async () => {
         setLoading(true);
         setError(null);
@@ -55,7 +54,7 @@ export default function BlackJackGame() {
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
                     },
                     timeout: 10000,
                     withCredentials: true
@@ -83,25 +82,7 @@ export default function BlackJackGame() {
                     setGameInitialized(false);
                     setGameActive(false);
                     setGameResult(null);
-                    setBet(bet); // Reset bet to default
-                    
-                    // Try to reset the game on the server
-                    try {
-                        await axios.post(
-                            `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                            { amount: bet.toString() },
-                            {
-                                headers: {
-                                    "Content-Type": "application/json",
-                                    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-                                },
-                                timeout: 10000,
-                                withCredentials: true
-                            }
-                        );
-                    } catch (error) {
-                        console.error('Failed to reset game on server:', error);
-                    }
+                    // Don't reset the bet value here
                 } else if (data.game_state.game_over) {
                     setPlayerHand([]);
                     setDealerHand([]);
@@ -132,7 +113,7 @@ export default function BlackJackGame() {
             setLoading(false);
         } catch (error) {
             const message = error.response?.data?.message || "Failed to fetch game state";
-            console.log(message)
+            console.log(message);
             handleApiError(error, "fetch game state", message);
         }
     };
@@ -142,21 +123,23 @@ export default function BlackJackGame() {
         setError(null);
         console.log('Starting new game with bet:', bet);
 
-        setPlayerHand([]);
-        setDealerHand([]);
-        setGameResult(null);
-        setGameInitialized(false);
-        setGameActive(false);
-
         try {
-            console.log('Making bet request...');
+            // Reset game state before starting a new one
+            setPlayerHand([]);
+            setDealerHand([]);
+            setGameResult(null);
+            
+            // Important: ensure the bet value is properly converted to string
+            const betAmount = bet.toString();
+            console.log('Making bet request with amount:', betAmount);
+            
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                { amount: bet.toString() },
+                { amount: betAmount },
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
                     },
                     timeout: 10000,
                     withCredentials: true
@@ -164,10 +147,29 @@ export default function BlackJackGame() {
             );
             console.log('Bet response:', response.data);
 
-            await fetchGameState();
+            // Process the response immediately
+            if (response.data.game_state) {
+                setPlayerHand(response.data.game_state.player_hand || []);
+                setDealerHand(response.data.game_state.dealer_hand || []);
+                setGameInitialized(true);
+                setGameActive(true);
+                
+                if (response.data.message) {
+                    setGameResult(response.data.message);
+                }
+                
+                if (typeof response.data.balance === 'number' && response.data.balance >= 0) {
+                    setBalance(response.data.balance);
+                }
+            } else {
+                // Fallback to fetching game state if the response doesn't include it
+                await fetchGameState();
+            }
         } catch (error) {
             console.error('Error starting game:', error);
             handleApiError(error, "start game");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -182,7 +184,7 @@ export default function BlackJackGame() {
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
                     },
                     timeout: 10000,
                     withCredentials: true
@@ -195,8 +197,14 @@ export default function BlackJackGame() {
             if (data.game_state) {
                 setPlayerHand(data.game_state.player_hand || []);
                 setDealerHand(data.game_state.dealer_hand || []);
-                setBalance(data.balance || balance);
-                setBet(Number(data.bet) || bet);
+                
+                if (typeof data.balance === 'number' && data.balance >= 0) {
+                    setBalance(data.balance);
+                }
+                
+                if (typeof data.bet === 'number') {
+                    setBet(data.bet);
+                }
 
                 if (data.game_state.game_over) {
                     setGameInitialized(false);
@@ -205,14 +213,16 @@ export default function BlackJackGame() {
 
             if (data.message) {
                 setGameResult(data.message);
-                setGameInitialized(false);
+                if (data.game_state?.game_over) {
+                    setGameInitialized(false);
+                }
             }
         } catch (error) {
             handleApiError(error, action);
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <div className="flex-grow flex flex-col items-center p-4 sm:p-6">
@@ -224,15 +234,15 @@ export default function BlackJackGame() {
                     </div>
                     <span className="text-xl text-yellow-400 group relative">
                         <InfoIcon className="h-6 w-6 mr-2" />
-                            <span
-                                className="absolute bottom-full right-1/2 transform translate-x-6 mb-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                Place your bet and start the game. You can hit or stand during your turn, and the dealer will play after you.
-                                <br/>
-                                The goal is to get as close to 21 as possible without going over. If you go over, you lose.
-                                <br/>
-                                If the dealer goes over, you win! If you both have the same score, it's a tie.
-                            </span>
+                        <span
+                            className="absolute bottom-full right-1/2 transform translate-x-6 mb-2 w-max px-2 py-1 text-sm text-yellow-400 bg-slate-950 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            Place your bet and start the game. You can hit or stand during your turn, and the dealer will play after you.
+                            <br/>
+                            The goal is to get as close to 21 as possible without going over. If you go over, you lose.
+                            <br/>
+                            If the dealer goes over, you win! If you both have the same score, it's a tie.
+                        </span>
                     </span>
                 </div>
                 <div className="flex gap-4 items-center mt-6">
