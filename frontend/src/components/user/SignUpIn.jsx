@@ -13,7 +13,7 @@ const AuthButton = ({ onClick, children }) => (
     <button
         name="authButton"
         onClick={onClick}
-        className="bg-yellow-400 text-black hover:bg-yellow-500 px-6 py-2 rounded mt-4 transition-colors w-100 flex items-center justify-center"
+        className="bg-yellow-400 text-black hover:bg-yellow-500 px-6 py-2 rounded mt-4 transition-colors md:w-75 flex items-center justify-center"
         data-testid="auth-submit"
     >
         {children}

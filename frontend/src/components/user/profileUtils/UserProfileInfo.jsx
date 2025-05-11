@@ -20,24 +20,24 @@ export default function UserProfileInfo({ user, onEditProfile, onNewTransaction,
                     <span className="text-xl">${parseFloat(user.balance || 0).toFixed(2)}</span>
                 </div>
             </div>
-            <div className="flex md:flex-row flex-col w-full space-x-2 mt-4">
+            <div className="flex md:flex-row flex-col w-full gap-2 mt-4">
                 <button
                     onClick={onEditProfile}
-                    className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+                    className="w-full flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
                 >
                     <Pencil className="h-6 w-6 text-black mr-2" />
                     Edit Profile
                 </button>
                 <button
                     onClick={onNewTransaction}
-                    className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+                    className="w-full flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
                 >
                     <DollarSign className="h-6 w-6 text-black mr-2" />
                     New Transaction
                 </button>
                 <button
                     onClick={onLogout}
-                    className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+                    className="w-full flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
                 >
                     <User2 className="h-6 w-6 text-black mr-2" />
                     Log out
