@@ -115,13 +115,12 @@ export default function BlackJackGame() {
         setLoading(true);
         setError(null);
         
-        // Reset local state before starting
         resetLocalGameState();
 
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
-                { amount: bet.toString() },
+                { amount: bet },
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -133,7 +132,6 @@ export default function BlackJackGame() {
             );
 
             if (response.data.game_state) {
-                // Validate the game state
                 if (!response.data.game_state.player_hand?.length || !response.data.game_state.dealer_hand?.length) {
                     console.log('Invalid game state after bet, resetting local state...');
                     resetLocalGameState();
