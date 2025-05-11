@@ -20,7 +20,7 @@ export default function UserProfileInfo({ user, onEditProfile, onNewTransaction,
                     <span className="text-xl">${parseFloat(user.balance || 0).toFixed(2)}</span>
                 </div>
             </div>
-            <div className="flex flex-row w-full space-x-2 mt-4">
+            <div className="flex md:flex-row flex-col w-full space-x-2 mt-4">
                 <button
                     onClick={onEditProfile}
                     className="flex-1 flex items-center justify-center bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
