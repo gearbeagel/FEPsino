@@ -83,13 +83,13 @@ export default function BlackJackGame() {
                     setGameInitialized(false);
                     setGameActive(false);
                     setGameResult(null);
-                    setBet(10); // Reset bet to default
+                    setBet(bet); // Reset bet to default
                     
                     // Try to reset the game on the server
                     try {
                         await axios.post(
-                            `${import.meta.env.VITE_API_URL}/blackjack/reset/`,
-                            {},
+                            `${import.meta.env.VITE_API_URL}/blackjack/bet/`,
+                            { amount: bet.toString() },
                             {
                                 headers: {
                                     "Content-Type": "application/json",
