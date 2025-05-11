@@ -63,7 +63,7 @@ export default function BlackJackGame() {
             const data = response.data;
 
             if (data.game_state) {
-                if (data.game_state.game_over || data.game_state.player_hand.length === 0) {
+                if (data.game_state.game_over) {
                     setPlayerHand([]);
                     setDealerHand([]);
                     setGameInitialized(false);
