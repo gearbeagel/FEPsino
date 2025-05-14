@@ -18,6 +18,7 @@ export default function DiceGame() {
     const [selectedNumber, setSelectedNumber] = useState(2);
     const [gameInitialized, setGameInitialized] = useState(false);
     const [rolling, setRolling] = useState(false);
+    const [gameResult, setGameResult] = useState(null);
 
     const { isAuthenticated, loading } = useAuth();
     const navigate = useNavigate();
@@ -74,6 +75,7 @@ export default function DiceGame() {
 
     const rollDice = async () => {
         setRolling(true);
+        setGameResult(null);
         try {
             const response = await fetch(
                 `${import.meta.env.VITE_API_URL}/dice/start/`,
@@ -100,6 +102,7 @@ export default function DiceGame() {
             setLastWin(result.payout);
             setBalance(result.new_balance);
             setGameInitialized(true);
+            setGameResult(result.payout > 0 ? `You won $${result.payout}!` : `You lost $${bet}!`);
         } catch (error) {
             if (error.message === "Not enough coins!") {
                 error.message = "Insufficient balance for this bet.";
@@ -220,15 +223,11 @@ export default function DiceGame() {
                         {renderDice(diceType2, diceValue2)}
                     </motion.div>
                 </div>
-                {gameInitialized && (
-                    <div
-                        className={`text-center text-xl ${
-                            lastWin > 0 ? "text-green-400" : "text-red-400"
-                        }`}
-                    >
-                        {lastWin > 0
-                            ? `You won $${lastWin}!`
-                            : `You lost $${bet}!`}
+                {gameResult && (
+                    <div className={`text-center text-xl ${
+                        lastWin > 0 ? "text-green-400" : "text-red-400"
+                    }`}>
+                        {gameResult}
                     </div>
                 )}
             </div>

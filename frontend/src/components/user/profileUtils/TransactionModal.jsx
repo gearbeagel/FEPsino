@@ -1,12 +1,26 @@
 import React, { useState } from "react";
 import { DollarSign, X } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
 
-export default function TransactionModal({ show, onClose, onSubmit }) {
+export default function TransactionModal({ show, onClose, onSubmit, userBalance }) {
     const [amount, setAmount] = useState("");
     const [txnType, setTxnType] = useState("DEPOSIT");
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        const amountNum = parseFloat(amount);
+
+        if (amountNum <= 0) {
+            toast.error("Amount must be greater than 0");
+            return;
+        }
+        
+        if (txnType === "WITHDRAWAL" && amountNum > userBalance) {
+            toast.error("Insufficient funds for withdrawal");
+            return;
+        }
+        
         onSubmit(amount, txnType);
         setAmount("");
         setTxnType("DEPOSIT");
@@ -37,6 +51,7 @@ export default function TransactionModal({ show, onClose, onSubmit }) {
                     <input
                         type="number"
                         step="0.01"
+                        min="0.01"
                         required
                         placeholder="Amount"
                         value={amount}
@@ -61,6 +76,15 @@ export default function TransactionModal({ show, onClose, onSubmit }) {
                     </div>
                 </form>
             </div>
+            <ToastContainer 
+                theme="dark"
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+            />
         </div>
     );
 }

@@ -24,6 +24,7 @@ export default function SlotsGame() {
   const [bet, setBet] = useState(10);
   const [lastWin, setLastWin] = useState(0);
   const [winData, setWinData] = useState(null);
+  const [gameResult, setGameResult] = useState(null);
   const spinIntervalRef = React.useRef(null);
 
   const { isAuthenticated, loading, user } = useAuth();
@@ -86,6 +87,7 @@ export default function SlotsGame() {
     setLastWin(payout);
     setBalance(newBalance);
     setWinData(winData);
+    setGameResult(payout > 0 ? `You won $${payout}!` : `You lost $${bet}!`);
   };
 
   const spin = async () => {
@@ -96,6 +98,8 @@ export default function SlotsGame() {
 
     setIsSpinning(true);
     setWinData(null);
+    setGameResult(null);
+    setBalance(prevBalance => prevBalance - bet);
 
     if (spinIntervalRef.current) {
       spinIntervalRef.current.forEach(interval => clearInterval(interval));
@@ -158,6 +162,7 @@ export default function SlotsGame() {
 
               if (col === NUM_COLUMNS - 1) {
                 setTimeout(() => {
+                  setBalance(parseFloat(result.current_balance));
                   handleSpinEnd(
                     finalReels, 
                     parseFloat(result.payout), 
@@ -178,12 +183,12 @@ export default function SlotsGame() {
       spinIntervalRef.current = null;
 
       setIsSpinning(false);
-      toast.error("Error spinning: " + error.message);
       try {
         await fetchBalance(setBalance, user);
       } catch (fetchError) {
         toast.error(fetchError.message);
       }
+      toast.error("Error spinning: " + error.message);
     }
   };
 
@@ -281,8 +286,12 @@ export default function SlotsGame() {
                 </div>
             </div>
 
-            {winData && lastWin > 0 && (
-                <h2 className="text-xl sm:text-2xl text-center text-green-400">You Won ${lastWin}!</h2>
+            {gameResult && (
+                <h2 className={`text-xl sm:text-2xl text-center ${
+                    lastWin > 0 ? "text-green-400" : "text-red-400"
+                }`}>
+                    {gameResult}
+                </h2>
             )}
         </div>
 

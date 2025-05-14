@@ -103,7 +103,9 @@ export default function BlackJackGame() {
         if (!canPlay || isLoading) return;
 
         setIsLoading(true);
+        const currentBet = bet;
         resetGame();
+        setBet(currentBet);
 
         try {
             const betResponse = await axios.post(
@@ -203,7 +205,6 @@ export default function BlackJackGame() {
     };
 
     const handleBetChange = (e) => {
-        if (!canPlay) return;
         setBet(Number(e.target.value));
     };
 
