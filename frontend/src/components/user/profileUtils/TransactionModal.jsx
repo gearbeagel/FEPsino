@@ -50,7 +50,7 @@ export default function TransactionModal({ show, onClose, onSubmit, userBalance 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <input
                         type="number"
-                        step="10"
+                        step="0.01"
                         min="0.01"
                         required
                         placeholder="Amount"
