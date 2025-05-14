@@ -8,7 +8,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 
 from rest_framework import serializers
 from .game_logic import DiceGameLogic, GameContext
-from .services import DiceGameService, CoinService
+from .services import DiceGameService
 from .dice import Cube, Octahedron, Dodecahedron
 from .serializers import StartDiceGameSerializer
 
@@ -52,7 +52,7 @@ class TestDiceGameLogic(unittest.TestCase):
         result = logic.start_game(6, 8, bet=10, guessed_number=7)
 
         expected_multiplier = (6 + 8) / 10 + 1
-        self.assertEqual(result['payout'], int(10 * expected_multiplier))
+        self.assertEqual(result['payout'], 10 * expected_multiplier)
         self.assertEqual(result['total'], 7)
 
     def test_near_miss_payout(self):
@@ -62,7 +62,7 @@ class TestDiceGameLogic(unittest.TestCase):
         result = logic.start_game(6, 8, bet=10, guessed_number=6)
 
         expected_multiplier = (6 + 8) / 10
-        self.assertEqual(result['payout'], int(10 * expected_multiplier))
+        self.assertEqual(result['payout'], 10 * expected_multiplier)
         self.assertEqual(result['total'], 7)
 
     def test_total_miss_zero_payout(self):
@@ -71,7 +71,7 @@ class TestDiceGameLogic(unittest.TestCase):
         logic = DiceGameLogic(self.factories, 100)
         result = logic.start_game(6, 8, bet=10, guessed_number=10)
 
-        self.assertEqual(result['payout'], 0)
+        self.assertEqual(result['payout'], Decimal('0.00'))
         self.assertEqual(result['total'], 3)
 
 
@@ -83,10 +83,10 @@ class TestDiceGameService(unittest.TestCase):
     def test_execute_game_flow_win(self, mock_save_game, mock_get_factories, mock_atomic):
         user = MagicMock()
         user.profile.balance = Decimal('100.00')
-        user.profile.save = MagicMock()
+        user.profile.deduct_balance = MagicMock()
+        user.profile.add_balance = MagicMock()
 
         factories = {
-            3: MagicMock(),
             6: MagicMock(),
             8: MagicMock(),
             12: MagicMock()
@@ -98,12 +98,14 @@ class TestDiceGameService(unittest.TestCase):
         for factory in factories.values():
             factory.create_figure.return_value = mock_dice
         mock_get_factories.return_value = factories
+
         data = {
             'bet': 10,
             'choice1': 6,
             'choice2': 6,
             'guessed_number': 6
         }
+
         with patch('dice.game_logic.DiceGameLogic.start_game') as mock_start_game:
             mock_start_game.return_value = {
                 'rolls': (3, 3),
@@ -114,7 +116,8 @@ class TestDiceGameService(unittest.TestCase):
             result = DiceGameService.execute_game_flow(user, data)
             self.assertEqual(result['total'], 6)
             self.assertEqual(result['payout'], 20)
-            user.profile.save.assert_called()
+            user.profile.deduct_balance.assert_called_once_with(Decimal('10'))
+            user.profile.add_balance.assert_called_once_with(Decimal('20'))
             mock_save_game.assert_called_once_with(user, data, result)
 
     @patch('dice.services.transaction.atomic')
@@ -123,7 +126,8 @@ class TestDiceGameService(unittest.TestCase):
     def test_execute_game_flow_loss(self, mock_save_game, mock_get_factories, mock_atomic):
         user = MagicMock()
         user.profile.balance = Decimal('100.00')
-        user.profile.save = MagicMock()
+        user.profile.deduct_balance = MagicMock()
+        user.profile.add_balance = MagicMock()
 
         factories = {
             6: MagicMock(),
@@ -152,18 +156,22 @@ class TestDiceGameService(unittest.TestCase):
             result = DiceGameService.execute_game_flow(user, data)
             self.assertEqual(result['total'], 4)
             self.assertEqual(result['payout'], 0)
-            user.profile.save.assert_called()
+            user.profile.deduct_balance.assert_called_once_with(Decimal('10'))
+            user.profile.add_balance.assert_not_called()
             mock_save_game.assert_called_once_with(user, data, result)
 
 
 class TestDiceGameServiceEdgeCases(unittest.TestCase):
 
-    def test_insufficient_balance(self):
+    @patch('dice.services.transaction.atomic')
+    def test_insufficient_balance(self, mock_atomic):
         user = MagicMock()
         user.profile.balance = Decimal('5.00')
+        user.profile.deduct_balance = MagicMock(side_effect=ValueError("Not enough coins!"))
+
         data = {'bet': 10, 'choice1': 6, 'choice2': 6, 'guessed_number': 7}
         with self.assertRaises(ValueError) as context:
-            CoinService.check_user_coins(user, Decimal('10.00'))
+            DiceGameService.execute_game_flow(user, data)
         self.assertEqual(str(context.exception), "Not enough coins!")
 
     def test_guessed_number_less_than_two(self):
@@ -212,40 +220,40 @@ class TestDiceGameServiceEdgeCases(unittest.TestCase):
         self.assertIn('guessed_number', serializer.errors)
 
 
-class TestCoinService(TestCase):
-    def test_check_user_coins_insufficient(self):
+class TestUserProfileBalance(TestCase):
+    def test_insufficient_balance_deduction(self):
         user = MagicMock()
         user.profile.balance = Decimal('10.00')
+        user.profile.deduct_balance = MagicMock(side_effect=ValueError("Not enough coins!"))
 
         with self.assertRaises(ValueError):
-            CoinService.check_user_coins(user, Decimal('20.00'))
+            user.profile.deduct_balance(Decimal('20.00'))
 
-    def test_check_user_coins_exact_balance(self):
+    def test_exact_balance_deduction(self):
         user = MagicMock()
         user.profile.balance = Decimal('50.00')
+        user.profile.deduct_balance = MagicMock()
 
         try:
-            CoinService.check_user_coins(user, Decimal('50.00'))
+            user.profile.deduct_balance(Decimal('50.00'))
         except ValueError:
-            self.fail("check_user_coins raised ValueError unexpectedly with exact balance")
+            self.fail("deduct_balance raised ValueError unexpectedly with exact balance")
 
-    def test_update_balance_zero_payout(self):
+    def test_balance_addition_zero(self):
         user = MagicMock()
         user.profile.balance = Decimal('100.00')
-        user.profile.save = MagicMock()
+        user.profile.add_balance = MagicMock()
 
-        CoinService.update_balance(user, Decimal('0.00'))
-        self.assertEqual(user.profile.balance, Decimal('100.00'))
-        user.profile.save.assert_called_once()
+        user.profile.add_balance(Decimal('0.00'))
+        user.profile.add_balance.assert_called_once_with(Decimal('0.00'))
 
-    def test_update_balance_large_payout(self):
+    def test_balance_addition_large_amount(self):
         user = MagicMock()
         user.profile.balance = Decimal('100.00')
-        user.profile.save = MagicMock()
+        user.profile.add_balance = MagicMock()
 
-        CoinService.update_balance(user, Decimal('1000000.00'))
-        self.assertEqual(user.profile.balance, Decimal('1000100.00'))
-        user.profile.save.assert_called_once()
+        user.profile.add_balance(Decimal('1000000.00'))
+        user.profile.add_balance.assert_called_once_with(Decimal('1000000.00'))
 
 
 if __name__ == '__main__':
