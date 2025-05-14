@@ -22,6 +22,8 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SECURE = True
 
+CSRF_TRUSTED_ORIGINS = ["https://*.127.0.0.1", "https://*.localhost", "https://fepsino.vercel.app"]
+
 INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.admin',

@@ -40,13 +40,13 @@ export default function TransactionTable({ transactions }) {
                             <tbody>
                             {transactions.map((t, i) => (
                                 <tr key={i} className="odd:bg-gray-700 even:bg-gray-800 hover:bg-gray-600">
-                                    <td className="px-4 py-2 border border-gray-700">
+                                    <td className="px-4 py-2 border border-gray-700 break-words">
                                         <DisplayDate dateString={t.date} />
                                     </td>
-                                    <td className="px-4 py-2 border border-gray-700">
+                                    <td className="px-4 py-2 border border-gray-700 break-words">
                                         {t.transaction_type}
                                     </td>
-                                    <td className="px-4 py-2 border border-gray-700">
+                                    <td className="px-4 py-2 border border-gray-700 break-words">
                                         {parseFloat(t.amount).toFixed(2)}
                                     </td>
                                 </tr>
