@@ -99,6 +99,7 @@ export default function SlotsGame() {
     setIsSpinning(true);
     setWinData(null);
     setGameResult(null);
+    setBalance(prevBalance => prevBalance - bet);
 
     if (spinIntervalRef.current) {
       spinIntervalRef.current.forEach(interval => clearInterval(interval));
@@ -161,6 +162,7 @@ export default function SlotsGame() {
 
               if (col === NUM_COLUMNS - 1) {
                 setTimeout(() => {
+                  setBalance(parseFloat(result.current_balance));
                   handleSpinEnd(
                     finalReels, 
                     parseFloat(result.payout), 
@@ -181,12 +183,12 @@ export default function SlotsGame() {
       spinIntervalRef.current = null;
 
       setIsSpinning(false);
-      toast.error("Error spinning: " + error.message);
       try {
         await fetchBalance(setBalance, user);
       } catch (fetchError) {
         toast.error(fetchError.message);
       }
+      toast.error("Error spinning: " + error.message);
     }
   };
 
