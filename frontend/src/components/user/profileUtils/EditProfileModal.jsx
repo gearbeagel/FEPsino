@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Pencil, X } from "lucide-react";
+import {toast, ToastContainer} from "react-toastify";
 
 export default function EditProfileModal({ show, onClose, onSubmit, userData }) {
     const [editSection, setEditSection] = useState("email");
@@ -23,8 +24,19 @@ export default function EditProfileModal({ show, onClose, onSubmit, userData }) 
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        if (editSection === "password") {
+            if (editData.old_password === editData.password) {
+                toast.error("New password must be different from the current password");
+                return;
+            }
+            if (editData.password !== editData.confirm_password) {
+                toast.error("New passwords do not match");
+                return;
+            }
+        }
+        
         onSubmit(editData);
-        // Reset password fields
         setEditData(prevData => ({
             ...prevData,
             old_password: "",
@@ -142,6 +154,15 @@ export default function EditProfileModal({ show, onClose, onSubmit, userData }) 
                     </form>
                 </div>
             </div>
+            <ToastContainer
+                theme="dark"
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+            />
         </div>
     );
 }

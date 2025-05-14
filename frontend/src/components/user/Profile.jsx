@@ -115,7 +115,8 @@ export default function Profile() {
             <TransactionModal 
                 show={showTxnModal} 
                 onClose={() => setShowTxnModal(false)} 
-                onSubmit={handleTransaction} 
+                onSubmit={handleTransaction}
+                userBalance={parseFloat(user.balance || 0)} 
             />
 
             <EditProfileModal 
