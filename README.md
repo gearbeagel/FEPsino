@@ -116,6 +116,218 @@ sequenceDiagram
     Database-->>API: Confirm Update
 ```
 
+### Class Diagram 
+
+```mermaid
+classDiagram
+    class User {
+        +email: EmailField
+        +is_active: BooleanField
+        +is_staff: BooleanField
+        +__str__()
+    }
+    
+    class UserManager {
+        +create_user(email, password)
+        +create_superuser(email, password)
+    }
+    
+    class Profile {
+        +user: OneToOneField
+        +username: CharField
+        +balance: DecimalField
+        +__str__()
+        +add_balance(amount)
+        +deduct_balance(amount)
+        +process_transaction(amount, transaction_type)
+    }
+    
+    class Transaction {
+        +profile: ForeignKey
+        +amount: DecimalField
+        +date: DateTimeField
+        +transaction_type: CharField
+        +__str__()
+    }
+    
+    class Symbol {
+        +name: CharField
+        +payout_multiplier: DecimalField
+        +__str__()
+    }
+    
+    class Spin {
+        +id: UUIDField
+        +user: ForeignKey
+        +bet_amount: DecimalField
+        +payout: DecimalField
+        +result: JSONField
+        +win_data: JSONField
+        +timestamp: DateTimeField
+    }
+    
+    class GameHistory {
+        +user: ForeignKey
+        +bet_amount: DecimalField
+        +outcome: CharField
+        +player_score: PositiveSmallIntegerField
+        +dealer_score: PositiveSmallIntegerField
+        +player_hand: TextField
+        +dealer_hand: TextField
+        +balance_change: IntegerField
+        +balance_before: PositiveIntegerField
+        +balance_after: PositiveIntegerField
+        +created_at: DateTimeField
+        +updated_at: DateTimeField
+        +__str__()
+    }
+    
+    class DiceGameModel {
+        +user: ForeignKey
+        +bet: DecimalField
+        +guessed_number: IntegerField
+        +choice1: CharField
+        +choice2: CharField
+        +roll1: IntegerField
+        +roll2: IntegerField
+        +total: IntegerField
+        +payout: DecimalField
+        +__str__()
+    }
+    
+    class ReelService {
+        -symbols: list
+        +__init__(symbols)
+        +generate_spin(num_reels, visible_rows)
+        -_extract_horizontal_values(result)
+        -_transpose_matrix(matrix)
+        -_reverse_rows(matrix)
+        +flip_horizontal(result)
+        +longest_seq(hit)
+        -_find_winning_combinations(horizontal)
+        +check_wins(result)
+        -_get_symbol_multiplier(symbol_name)
+        -_calculate_win_payout(symbol_name, indices, bet_amount)
+        +calculate_payout(win_data, bet_amount)
+    }
+    
+    class SlotMachineService {
+        -reel_service: ReelService
+        +__init__()
+        -_update_user_balance_for_bet(user, bet_amount)
+        -_update_user_balance_for_win(user, payout)
+        -_create_spin_record(user, bet_amount, payout, result, win_data)
+        +play_spin(user, bet_amount)
+    }
+    
+    class DiceGameService {
+        +execute_game_flow(user, data)
+        +save_game_to_db(user, data, result)
+        +build_response(result, user)
+    }
+    
+    class CoinService {
+        +check_user_coins(user, bet)
+        +deduct_bet(user, bet)
+        +update_balance(user, payout)
+    }
+    
+    class Card {
+        +rank: string
+        +suit: string
+        +__init__(rank, suit)
+        +__str__()
+        +to_dict()
+    }
+    
+    class BlackjackGame {
+        +RANKS: list
+        +SUITS: list
+        -player_hand: list
+        -dealer_hand: list
+        -deck: list
+        -game_over: boolean
+        +__init__()
+        +deal_card()
+        +create_deck()
+        +card_value(card)
+        +get_hand_score(hand)
+        +calculate_hand(hand)
+        +start_game()
+        -_deal_initial_cards()
+        +player_hit()
+        +dealer_play()
+        -_dealer_draw_cards()
+        -_determine_outcome(player_score, dealer_score)
+        +get_game_state()
+    }
+    
+    class SlotsGame {
+        -reels: state
+        -isSpinning: state
+        -balance: state
+        -bet: state
+        -lastWin: state
+        -winData: state
+        -spinIntervalRef: ref
+        +convertBackendResultToReels(result)
+        +generateRandomReels()
+        +handleSpinEnd(finalReels, payout, newBalance, winData)
+        +spin()
+        +isWinningSymbol(colIndex, rowIndex)
+        +render()
+    }
+    
+    class BlackjackGame {
+    }
+    
+    class DiceGame {
+    }
+    
+    class GameApi {
+        +fetchBalance(setBalance, user)
+    }
+    
+    class Profile {
+    }
+    
+    class SignUpIn {
+    }
+    
+    class UserApi {
+    }
+    
+    class DateApi {
+        +DisplayDate(dateString)
+    }
+    
+
+    User "1" -- "1" Profile : has
+    Profile "1" -- "*" Transaction : has
+    User -- UserManager : managed by
+    User "1" -- "*" Spin : has
+    User "1" -- "*" GameHistory : has
+    User "1" -- "*" DiceGameModel : has
+    
+    SlotMachineService -- ReelService : uses
+    SlotMachineService -- User : updates balance
+    SlotMachineService -- Spin : creates
+    
+    DiceGameService -- CoinService : uses
+    DiceGameService -- DiceGameModel : creates
+    DiceGameService -- User : updates balance
+    
+    BlackjackGame -- Card : uses
+    
+    SlotsGame -- GameApi : uses
+    BlackjackGame -- GameApi : uses
+    DiceGame -- GameApi : uses
+    
+    Profile -- UserApi : uses
+    SignUpIn -- UserApi : uses
+    Profile -- DateApi : uses
+```
+
 ### Architecture Characteristics
 
 | Characteristic  | Rating (1-5) | Description                                                   |
