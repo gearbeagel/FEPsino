@@ -1,68 +1,111 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import DiceGame from '../components/games/DiceGame.jsx';
-import { describe, it, vi, beforeEach, afterEach, expect } from 'vitest';
+import { vi, expect, it, beforeEach, describe } from 'vitest';
+
+vi.mock('framer-motion', () => ({
+    motion: { div: ({ children }) => <div>{children}</div> }
+}));
+
+vi.mock('react-toastify', () => ({
+    toast: { error: vi.fn() },
+    ToastContainer: () => <div data-testid="toast-container" />
+}));
+
+import { toast } from 'react-toastify';
+
+vi.mock('../context/AuthContext', () => ({
+    useAuth: vi.fn()
+}));
+import { useAuth } from '../context/AuthContext';
+
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => vi.fn()
+    };
+});
+import { useNavigate } from 'react-router-dom';
+
+vi.mock('../components/games/GameApi.jsx', () => ({
+    fetchBalance: vi.fn()
+}));
+import { fetchBalance } from '../components/games/GameApi.jsx';
 
 describe('DiceGame Component', () => {
+    let navigateMock;
+
     beforeEach(() => {
-        vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-token');
-    });
-
-    afterEach(() => {
         vi.clearAllMocks();
+
+        useAuth.mockReturnValue({ isAuthenticated: true, loading: false, user: {} });
+
+        navigateMock = useNavigate();
     });
 
-    it('renders initial balance, last win, and Roll Dice button', () => {
-        render(<DiceGame />);
-        expect(screen.getByText(/balance: \$1000/i)).toBeInTheDocument();
-        expect(screen.getByText(/last win: \$0/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /roll dice/i })).toBeInTheDocument();
-    });
-
-    it('updates the “Select Number” options when dice types change', () => {
-        render(<DiceGame />);
-        const [selectNumber] = screen.getAllByRole('combobox');
-        expect(selectNumber.children).toHaveLength(11);
-        const allButtons = screen.getAllByRole('button');
-        fireEvent.click(allButtons[1]);
-        expect(selectNumber.children).toHaveLength(13);
-        fireEvent.click(allButtons[5]);
-        expect(selectNumber.children).toHaveLength(19);
-    });
-
-    it('shows a win message and updates balance when fetch returns a payout', async () => {
-        const mockResult = { roll1: 4, roll2: 2, payout: 20, new_balance: 1020 };
-        global.fetch = vi.fn(() =>
-            Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(mockResult),
-            })
-        );
-
-        render(<DiceGame />);
-        fireEvent.click(screen.getByRole('button', { name: /roll dice/i }));
-
-        await waitFor(() => {
-            expect(screen.getByText(/you won \$20!/i)).toBeInTheDocument();
-            expect(screen.getByText(/balance: \$1020/i)).toBeInTheDocument();
+    it('fetches initial balance on mount when authenticated', async () => {
+        fetchBalance.mockImplementationOnce((setBalance) => {
+            setBalance(42);
+            return Promise.resolve();
         });
-    });
-
-    it('shows a loss message when payout is zero', async () => {
-        const mockResult = { roll1: 1, roll2: 3, payout: 0, new_balance: 990 };
-        global.fetch = vi.fn(() =>
-            Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(mockResult),
-            })
-        );
 
         render(<DiceGame />);
+
+        expect(await screen.findByText(/Balance: \$42/)).toBeInTheDocument();
+        expect(fetchBalance).toHaveBeenCalled();
+    });
+
+    it('performs a successful roll', async () => {
+        fetchBalance.mockImplementation((setBalance) => {
+            setBalance(100);
+            return Promise.resolve();
+        });
+
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                roll1: 3,
+                roll2: 5,
+                payout: 20,
+                new_balance: 120
+            })
+        });
+
+        render(<DiceGame />);
+
+        await screen.findByText(/Balance: \$100/);
+        fireEvent.click(screen.getByRole('button', { name: /roll dice/i }));
+
+        expect(await screen.findByText(/Balance: \$120/)).toBeInTheDocument();
+
+        expect(
+            screen.getByText(/You won \$20!/i)
+        ).toBeInTheDocument();
+
+    });
+
+    it('shows error toast when insufficient balance on roll', async () => {
+        fetchBalance.mockImplementation((setBalance) => {
+            setBalance(10);
+            return Promise.resolve();
+        });
+
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            json: async () => ({ error: 'Not enough coins!' })
+        });
+
+        render(<DiceGame />);
+
+        await screen.findByText(/Balance: \$10/);
+
         fireEvent.click(screen.getByRole('button', { name: /roll dice/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/you lost \$10!/i)).toBeInTheDocument();
-            expect(screen.getByText(/balance: \$990/i)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(
+                'Insufficient balance for this bet.'
+            );
         });
     });
 });

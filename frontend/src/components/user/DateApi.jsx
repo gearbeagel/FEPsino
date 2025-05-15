@@ -14,3 +14,7 @@ export default function DisplayDate({ dateString }) {
         </div>
     );
 }
+
+DisplayDate.propTypes = {
+    dateString: PropTypes.string.isRequired,
+}

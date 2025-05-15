@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {Club, Play, Heart, Diamond, Spade, InfoIcon} from "lucide-react";
+import { Club, Play, Heart, Diamond, Spade, InfoIcon } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import axios from "axios";
 
@@ -230,8 +230,9 @@ export default function BlackJackGame() {
 
                 <div className="flex gap-4 items-center mt-6">
                     <div className="flex-1">
-                        <label className="block text-sm mb-1">Bet Amount</label>
+                        <label htmlFor='betAmount' className="block text-sm mb-1">Bet Amount</label>
                         <select
+                            id="betAmount"
                             value={bet}
                             onChange={handleBetChange}
                             disabled={!canPlay || isLoading}

@@ -88,3 +88,10 @@ export default function TransactionModal({ show, onClose, onSubmit, userBalance 
         </div>
     );
 }
+
+TransactionModal.propTypes = {
+    show: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    userBalance: PropTypes.number.isRequired,
+}

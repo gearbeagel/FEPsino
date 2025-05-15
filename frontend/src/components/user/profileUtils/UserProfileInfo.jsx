@@ -46,3 +46,16 @@ export default function UserProfileInfo({ user, onEditProfile, onNewTransaction,
         </>
     );
 }
+
+UserProfileInfo.propTypes = {
+    user: PropTypes.shape({
+        username: PropTypes.string.isRequired,
+        user: PropTypes.shape({
+            email: PropTypes.string.isRequired,
+        }).isRequired,
+        balance: PropTypes.string,
+    }).isRequired,
+    onEditProfile: PropTypes.func.isRequired,
+    onNewTransaction: PropTypes.func.isRequired,
+    onLogout: PropTypes.func.isRequired,
+}

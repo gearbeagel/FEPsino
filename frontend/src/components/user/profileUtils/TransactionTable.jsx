@@ -59,3 +59,13 @@ export default function TransactionTable({ transactions }) {
         </div>
     );
 }
+
+TransactionTable.propTypes = {
+    transactions: PropTypes.arrayOf(
+        PropTypes.shape({
+            date: PropTypes.string.isRequired,
+            transaction_type: PropTypes.string.isRequired,
+            amount: PropTypes.number.isRequired,
+        })
+    ).isRequired,
+}

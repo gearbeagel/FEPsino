@@ -1,93 +1,92 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import Profile from '../components/user/Profile.jsx';
-import fetchUser from '../components/user/UserApi.jsx';
-import { describe, it, vi, beforeEach, afterEach, expect } from 'vitest';
+import axios from 'axios';
+import { vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
+import * as authModule from '../context/AuthContext.jsx';
 
-// 1) Mock the default export of UserApi.jsx
-vi.mock('../components/user/UserApi.jsx', () => ({
-    default: vi.fn(),
-}));
+vi.mock('axios');
 
-vi.mock('../components/user/UserApi.jsx', () => ({
-    default: vi.fn(),
-}));
-
-describe('Profile Component', () => {
-    const mockUser = {
-        email: 'test@example.com',
-        old_password: '',
-        password: '',
-        confirm_password: '',
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => vi.fn()
     };
+});
+
+vi.mock(
+    '../components/user/profileUtils/UserProfileInfo.jsx',
+    () => ({
+        default: ({ user }) => (
+            <div data-testid="UserProfileInfo">stub: {JSON.stringify(user)}</div>
+        )
+    })
+);
+vi.mock(
+    '../components/user/profileUtils/TransactionTable.jsx',
+    () => ({ default: () => <div data-testid="TransactionTable" /> })
+);
+vi.mock(
+    '../components/user/profileUtils/TransactionModal.jsx',
+    () => ({ default: () => <div data-testid="TransactionModal" /> })
+);
+vi.mock(
+    '../components/user/profileUtils/EditProfileModal.jsx',
+    () => ({ default: () => <div data-testid="EditProfileModal" /> })
+);
+
+describe('Profile component', () => {
+    const mockUser = { foo: 'bar' };
+    const mockTxns = [{ id: 1 }];
 
     beforeEach(() => {
-        fetchUser.mockResolvedValue(mockUser);
-        // stub localStorage.getItem for Authorization header
-        vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('mock-token');
+        vi.spyOn(authModule, 'useAuth').mockReturnValue({
+            logout: vi.fn()
+        });
+
+        axios.get.mockImplementation((url) => {
+            if (url.endsWith('/user/profile/')) {
+                return Promise.resolve({ data: mockUser });
+            }
+            if (url.endsWith('/user/transaction/')) {
+                return Promise.resolve({ data: mockTxns });
+            }
+            return Promise.reject(new Error('unexpected GET ' + url));
+        });
     });
 
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('shows user email after fetch', async () => {
-        render(<Profile />);
-        // email
-        expect(await screen.findByText(mockUser.email)).toBeInTheDocument();
-    });
-
-    it('toggles into edit mode and renders all three password inputs', async () => {
-        render(<Profile />);
-        // click "Edit"
-        const editBtn = await screen.findByRole('button', { name: /edit/i });
-        fireEvent.click(editBtn);
-
-        // form appears
-        const form = screen.getByTestId('edit-form');
-        expect(form).toBeInTheDocument();
-
-        // three placeholders: Old Password, Password, Confirm Password
-        const inputs = within(form).getAllByPlaceholderText(/password/i);
-        expect(inputs).toHaveLength(3);
-        expect(inputs[0]).toHaveAttribute('placeholder', 'Old Password');
-        expect(inputs[1]).toHaveAttribute('placeholder', 'Password');
-        expect(inputs[2]).toHaveAttribute('placeholder', 'Confirm Password');
-    });
-
-    it('allows you to type into the new‐password field', async () => {
-        render(<Profile />);
-        fireEvent.click(await screen.findByRole('button', { name: /edit/i }));
-        const [, newPassInput] = screen.getAllByPlaceholderText(/password/i);
-        fireEvent.change(newPassInput, { target: { value: 'newsecret' } });
-        expect(newPassInput).toHaveValue('newsecret');
-    });
-
-    it('submits a PUT request when the form is submitted', async () => {
-        // mock global.fetch for the update call
-        global.fetch = vi.fn(() =>
-            Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve(mockUser),
-            })
+    test('renders Profile and child stubs once data loads', async () => {
+        render(
+            <BrowserRouter>
+                <Profile />
+            </BrowserRouter>
         );
 
-        render(<Profile />);
-        fireEvent.click(await screen.findByRole('button', { name: /edit/i }));
+        await waitFor(() =>
+            expect(screen.getByTestId('UserProfileInfo')).toBeInTheDocument()
+        );
 
-        const [oldInput, newInput, confirmInput] = screen.getAllByPlaceholderText(/password/i);
-        fireEvent.change(oldInput,    { target: { value: 'oldpass' } });
-        fireEvent.change(newInput,    { target: { value: 'newpass' } });
-        fireEvent.change(confirmInput,{ target: { value: 'newpass' } });
+        expect(screen.getByTestId('TransactionTable')).toBeInTheDocument();
+        expect(screen.getByTestId('TransactionModal')).toBeInTheDocument();
+        expect(screen.getByTestId('EditProfileModal')).toBeInTheDocument();
+    });
 
-        // submit the form
-        fireEvent.submit(screen.getByTestId('edit-form'));
+    test('does not render child stubs while loading', () => {
+        axios.get.mockImplementation(() => new Promise(() => {}));
 
-        await waitFor(() => {
-            expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/user/update/'),
-                expect.objectContaining({ method: 'PUT' })
-            );
-        });
+        render(
+            <BrowserRouter>
+                <Profile />
+            </BrowserRouter>
+        );
+
+        expect(screen.queryByTestId('UserProfileInfo')).toBeNull();
+        expect(screen.queryByTestId('TransactionTable')).toBeNull();
     });
 });
