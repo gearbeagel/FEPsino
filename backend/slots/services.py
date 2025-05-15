@@ -308,6 +308,10 @@ class SlotMachineService:
                 'payout': payout
             }
 
+            # Add message if player loses
+            if not win_data or payout == Decimal('0.00'):
+                response['message'] = f"you lost ${bet_amount}"
+
             # Add current balance if profile is available
             if hasattr(user, 'profile'):
                 response['current_balance'] = float(user.profile.balance)
