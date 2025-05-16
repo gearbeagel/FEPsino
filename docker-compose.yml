@@ -10,12 +10,14 @@ services:
       - "8000:8000"
     command: >
       sh -c "./scripts/wait-for-db.sh &&
+             ./scripts/run-tests.sh &&
              python manage.py makemigrations &&
              python manage.py migrate &&
              python manage.py loaddata slots/symbols.json &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./backend:/backend
+      - ./backend/coverage:/backend/coverage
     depends_on:
       - db
 
@@ -69,13 +71,16 @@ services:
     container_name: sonarscanner
     environment:
       - SONAR_HOST_URL=${SONAR_HOST_URL}
-      - SONAR_LOGIN=${SONAR_TOKEN}
+      - SONAR_TOKEN=${SONAR_TOKEN}
     volumes:
       - ./:/usr/src/
     depends_on:
       - sonarqube
     command: >
-      sh -c "./backend/scripts/wait-for-sonar.sh sonarqube:9000 -- sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.projectName=$SONAR_PROJECT_NAME"
+      sh -c "echo 'Starting scanner...' &&
+             ./backend/scripts/wait-for-sonar.sh sonarqube:9000 &&
+             echo 'SonarQube is ready, running scanner...' &&
+             sonar-scanner"
     restart: "no"
     networks:
       - default

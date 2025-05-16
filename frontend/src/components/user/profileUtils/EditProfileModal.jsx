@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Pencil, X } from "lucide-react";
 import {toast, ToastContainer} from "react-toastify";
+import PropTypes from "prop-types";
 
 export default function EditProfileModal({ show, onClose, onSubmit, userData }) {
     const [editSection, setEditSection] = useState("email");
@@ -165,4 +166,16 @@ export default function EditProfileModal({ show, onClose, onSubmit, userData }) 
             />
         </div>
     );
+}
+
+EditProfileModal.propTypes = {
+    show: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    userData: PropTypes.shape({
+        user: PropTypes.shape({
+            email: PropTypes.string,
+        }),
+        username: PropTypes.string,
+    }).isRequired,
 }

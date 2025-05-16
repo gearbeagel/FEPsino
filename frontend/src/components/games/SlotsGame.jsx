@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Coins, RotateCcw, Play, Star, Heart, Cherry, GemIcon, CitrusIcon, InfoIcon } from 'lucide-react';
+import { Coins, Play, Star, Heart, Cherry, GemIcon, CitrusIcon, InfoIcon } from 'lucide-react';
 import { toast, ToastContainer } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -211,7 +211,7 @@ export default function SlotsGame() {
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <Coins className="h-6 w-6 text-yellow-400 mr-2" />
-              <span className="text-xl">Balance: ${balance}</span>
+              <span data-testid="balance-display" className="text-xl">Balance: ${balance}</span>
             </div>
             <span className="text-xl text-yellow-400 group relative">
               <InfoIcon className="h-6 w-6 mr-2" />
@@ -225,8 +225,9 @@ export default function SlotsGame() {
 
             <div className="flex gap-4 items-center">
                 <div className="flex-1">
-                    <label className="block text-sm mb-1">Bet Amount</label>
+                    <label htmlFor="betAmount" className="block text-sm mb-1">Bet Amount</label>
                     <select
+                        id="betAmount"
                         value={bet}
                         onChange={(e) => setBet(Number(e.target.value))}
                         className="w-full bg-gray-700 rounded p-2 text-white"

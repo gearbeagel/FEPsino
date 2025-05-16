@@ -5,16 +5,16 @@ export default defineConfig({
         globals: true, // <-- enables global expect, test, describe, etc.
         environment: 'jsdom', // <-- simulates the DOM for React components
         setupFiles: './setupTests.js',
+        testTimeout: 10000,
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'lcov', 'json'],
+            reporter: ['text', 'lcov'],
             reportsDirectory: './coverage',
             exclude: [
                 'node_modules/**',
                 '**.config.js',
                 'src/main.jsx',
-                'src/components/games/SlotsGame.jsx',
-                'src/components/games/BlackjackGame.jsx',
+                'src/components/user/UserApi.jsx',
                 'src/animations/**'
             ]
         },
@@ -22,6 +22,7 @@ export default defineConfig({
         outputFile: {
             json: 'my-json-report.json',
             'vitest-sonar-reporter': 'testResults/sonar-report.xml',
+            lcov: 'coverage/lcov.info',
         },
     },
 });

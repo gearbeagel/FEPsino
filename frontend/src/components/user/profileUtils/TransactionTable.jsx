@@ -1,6 +1,7 @@
 import React from "react";
 import { Wallet } from "lucide-react";
 import DisplayDate from "../DateApi.jsx";
+import PropTypes from "prop-types";
 
 export default function TransactionTable({ transactions }) {
     return (
@@ -58,4 +59,14 @@ export default function TransactionTable({ transactions }) {
             )}
         </div>
     );
+}
+
+TransactionTable.propTypes = {
+    transactions: PropTypes.arrayOf(
+        PropTypes.shape({
+            date: PropTypes.string.isRequired,
+            transaction_type: PropTypes.string.isRequired,
+            amount: PropTypes.number.isRequired,
+        })
+    ).isRequired,
 }

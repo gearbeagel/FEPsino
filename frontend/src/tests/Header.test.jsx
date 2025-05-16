@@ -1,61 +1,66 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, vi, beforeEach, expect } from 'vitest';
-import Header from '../components/Header.jsx';
-import { MemoryRouter } from 'react-router-dom';
-import React from 'react';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import Header from "../components/Header";
+import { useAuth } from "../context/AuthContext";
+import { MemoryRouter } from "react-router-dom";
+import { describe, it, expect, vi } from "vitest";
 
-// Fix the mock path to match the actual import in your Header component
-vi.mock('../components/user/UserApi.jsx', () => ({
-    default: vi.fn()
+vi.mock("../context/AuthContext", () => ({
+    useAuth: vi.fn(),
 }));
 
-describe('Header Component', () => {
-    beforeEach(() => {
-        vi.resetAllMocks();
+describe("Header component", () => {
+    it("renders nothing while loading", () => {
+        useAuth.mockReturnValue({ loading: true });
+        const { container } = render(
+            <MemoryRouter>
+                <Header />
+            </MemoryRouter>
+        );
+        expect(container.firstChild).toBeNull();
     });
 
-    it('renders the site title', async () => {
-        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
-        fetchUser.mockResolvedValue(null);
+    it("shows Login / Sign Up when not authenticated", () => {
+        useAuth.mockReturnValue({ loading: false, isAuthenticated: false });
+        render(
+            <MemoryRouter>
+                <Header />
+            </MemoryRouter>
+        );
 
-        render(<Header />, { wrapper: MemoryRouter });
-
-        await waitFor(() => {
-            expect(screen.getByText(/FEPSino/i)).toBeInTheDocument();
-        });
+        expect(screen.getByText(/login \/ sign up/i)).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /profile/i })).toBeNull();
     });
 
-    it('shows Login / Sign Up button if user not logged in', async () => {
-        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
-        fetchUser.mockResolvedValue(null);
+    it("shows Profile link when authenticated", () => {
+        useAuth.mockReturnValue({ loading: false, isAuthenticated: true });
+        render(
+            <MemoryRouter>
+                <Header />
+            </MemoryRouter>
+        );
 
-        render(<Header />, { wrapper: MemoryRouter });
+        const profileLink = screen.getByRole("link", { name: "" });
+        expect(profileLink).toHaveAttribute("href", "/profile");
 
-        await waitFor(() => {
-            expect(screen.getByText(/Login \/ Sign Up/i)).toBeInTheDocument();
-        });
+        expect(screen.queryByText(/login \/ sign up/i)).toBeNull();
     });
 
-    it('shows user email when logged in', async () => {
-        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
-        const mockUser = { email: 'test@example.com' };
-        fetchUser.mockResolvedValue(mockUser);
+    it("toggles mobile menu and shows Profile when authenticated", () => {
+        useAuth.mockReturnValue({ loading: false, isAuthenticated: true });
+        const { container } = render(
+            <MemoryRouter>
+                <Header />
+            </MemoryRouter>
+        );
 
-        render(<Header />, { wrapper: MemoryRouter });
+        fireEvent.click(screen.getByRole("button"));
+        expect(container.querySelector(".absolute.top-16")).toBeInTheDocument();
 
-        await waitFor(() => {
-            expect(screen.getByText(mockUser.email)).toBeInTheDocument();
-        });
-    });
+        const mobileProfile = container.querySelector('.absolute.top-16 a[href="/profile"]');
+        expect(mobileProfile).toBeInTheDocument();
 
-    it('renders About link', async () => {
-        const fetchUser = (await import('../components/user/UserApi.jsx')).default;
-        fetchUser.mockResolvedValue(null);
-
-        render(<Header />, { wrapper: MemoryRouter });
-
-        await waitFor(() => {
-            expect(screen.getByText(/About/i)).toBeInTheDocument();
-        });
+        fireEvent.click(mobileProfile);
+        expect(container.querySelector(".absolute.top-16")).toBeNull();
     });
 });

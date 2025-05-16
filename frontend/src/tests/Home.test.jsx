@@ -1,52 +1,72 @@
+// src/tests/Home.test.jsx
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import { fireEvent } from "@testing-library/dom";
+import Home from "../components/Home";
 import { MemoryRouter } from "react-router-dom";
-import { describe, test, beforeEach, expect } from "vitest";
-import Home from "../components/Home.jsx";
+import { describe, it, expect, beforeEach } from "vitest";
 
-describe("Home Component", () => {
+describe("Home component (with GameCards)", () => {
     beforeEach(() => {
         localStorage.clear();
     });
 
-    test("shows sign-in prompt when not authenticated", () => {
-        render(
+    function renderHome() {
+        return render(
             <MemoryRouter>
                 <Home />
             </MemoryRouter>
         );
+    }
 
-        expect(screen.getByText(/sign in required/i)).toBeInTheDocument();
-        expect(screen.getByText(/please sign in to access the games/i)).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /sign in \/ sign up/i })).toBeInTheDocument();
+    it("renders welcome text and featured-games header", () => {
+        renderHome();
+        expect(screen.getByText("Welcome to FEPSino")).toBeInTheDocument();
+        expect(screen.getByText("Our Featured Games")).toBeInTheDocument();
     });
 
-    test("displays game cards when authenticated", () => {
-        localStorage.setItem("access_token", "mock-token");
+    it("shows three game cards with correct titles and descriptions", () => {
+        renderHome();
+        // titles
+        expect(screen.getByText("Slot Machines")).toBeInTheDocument();
+        expect(screen.getByText("Blackjack")).toBeInTheDocument();
+        expect(screen.getByText("Dice Games")).toBeInTheDocument();
 
-        render(
-            <MemoryRouter>
-                <Home />
-            </MemoryRouter>
-        );
+        // descriptions (just check one to confirm)
+        expect(
+            screen.getByText(/Spin to win with our wide variety of themed slot machines\./i)
+        ).toBeInTheDocument();
+    });
 
-        expect(screen.getAllByText(/slot machines/i).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/blackjack/i).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/dice games/i).length).toBeGreaterThan(0);
+    it("when not authenticated, buttons are disabled and links blocked", () => {
+        renderHome();
 
+        // Buttons read "Join us to play!" and are disabled
+        const joinButtons = screen.getAllByRole("button", { name: /join us to play!/i });
+        expect(joinButtons).toHaveLength(3);
+        joinButtons.forEach((btn) => expect(btn).toBeDisabled());
+
+        // Links should have the CSS class that blocks pointer-events
+        const links = screen.getAllByRole("link");
+        links.forEach((link) => {
+            expect(link).toHaveClass("pointer-events-none");
+        });
+    });
+
+    it("when authenticated, buttons are enabled and links work", () => {
+        // simulate login
+        localStorage.setItem("access_token", "dummy-token");
+        renderHome();
+
+        // Buttons read "Play Now" and are enabled
         const playButtons = screen.getAllByRole("button", { name: /play now/i });
         expect(playButtons).toHaveLength(3);
-    });
+        playButtons.forEach((btn) => expect(btn).toBeEnabled());
 
-    test("matches snapshot when authenticated", () => {
-        localStorage.setItem("access_token", "mock-token");
-
-        const { asFragment } = render(
-            <MemoryRouter>
-                <Home />
-            </MemoryRouter>
-        );
-
-        expect(asFragment()).toMatchSnapshot();
+        // Links should NOT have the blocking class
+        const links = screen.getAllByRole("link");
+        links.forEach((link) => {
+            expect(link).not.toHaveClass("pointer-events-none");
+        });
     });
 });

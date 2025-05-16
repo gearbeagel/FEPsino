@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "coverage": "vitest --coverage",
+    "test:bail": "vitest --bail 1"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.9",

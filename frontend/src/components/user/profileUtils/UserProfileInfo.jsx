@@ -1,5 +1,6 @@
 import React from "react";
 import { Banknote, Mail, Pencil, User2, User, DollarSign } from "lucide-react";
+import PropTypes from "prop-types";
 
 export default function UserProfileInfo({ user, onEditProfile, onNewTransaction, onLogout }) {
     return (
@@ -45,4 +46,17 @@ export default function UserProfileInfo({ user, onEditProfile, onNewTransaction,
             </div>
         </>
     );
+}
+
+UserProfileInfo.propTypes = {
+    user: PropTypes.shape({
+        username: PropTypes.string.isRequired,
+        user: PropTypes.shape({
+            email: PropTypes.string.isRequired,
+        }).isRequired,
+        balance: PropTypes.string,
+    }).isRequired,
+    onEditProfile: PropTypes.func.isRequired,
+    onNewTransaction: PropTypes.func.isRequired,
+    onLogout: PropTypes.func.isRequired,
 }

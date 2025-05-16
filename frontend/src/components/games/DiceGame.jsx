@@ -160,8 +160,9 @@ export default function DiceGame() {
 
                 <div className="flex flex-col gap-4 mt-2">
                     <div className="flex flex-col">
-                        <label className="text-sm">Select Number</label>
+                        <label htmlFor="selectedNumber" className="text-sm">Select Number</label>
                         <select
+                            id="selectedNumber"
                             value={selectedNumber}
                             onChange={(e) =>
                                 setSelectedNumber(Number(e.target.value))
@@ -180,8 +181,9 @@ export default function DiceGame() {
                     </div>
 
                     <div className="flex-1">
-                        <label className="block text-sm mb-1">Bet Amount</label>
+                        <label htmlFor="betAmount" className="block text-sm mb-1">Bet Amount</label>
                         <select
+                            id="betAmount"
                             value={bet}
                             onChange={(e) => setBet(Number(e.target.value))}
                             className="w-full bg-gray-700 rounded p-2 text-white"
