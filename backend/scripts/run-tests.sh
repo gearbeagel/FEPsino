@@ -6,7 +6,7 @@ ls -la
 
 pip install coverage
 
-coverage run manage.py test
+coverage run --source=. manage.py test
 coverage xml -o coverage/coverage.xml
 
-sed -i 's#<source>/recognition#<source>recognition#' coverage/coverage.xml 
+sed -i 's#<source>/\([^<]*\)#<source>\1#' coverage/coverage.xml

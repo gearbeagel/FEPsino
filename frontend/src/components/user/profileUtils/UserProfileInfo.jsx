@@ -1,5 +1,6 @@
 import React from "react";
 import { Banknote, Mail, Pencil, User2, User, DollarSign } from "lucide-react";
+import PropTypes from "prop-types";
 
 export default function UserProfileInfo({ user, onEditProfile, onNewTransaction, onLogout }) {
     return (

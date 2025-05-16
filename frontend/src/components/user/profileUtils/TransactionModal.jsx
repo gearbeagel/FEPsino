@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { DollarSign, X } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
+import PropTypes from "prop-types";
 
 export default function TransactionModal({ show, onClose, onSubmit, userBalance }) {
     const [amount, setAmount] = useState("");

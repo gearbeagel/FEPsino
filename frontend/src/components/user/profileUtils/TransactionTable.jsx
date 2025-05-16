@@ -1,6 +1,7 @@
 import React from "react";
 import { Wallet } from "lucide-react";
 import DisplayDate from "../DateApi.jsx";
+import PropTypes from "prop-types";
 
 export default function TransactionTable({ transactions }) {
     return (

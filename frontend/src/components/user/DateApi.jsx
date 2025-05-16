@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow, parse } from "date-fns";
+import PropTypes from "prop-types";
 
 export default function DisplayDate({ dateString }) {
     // Parse the date string into a valid Date object
