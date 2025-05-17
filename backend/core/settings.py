@@ -15,7 +15,12 @@ ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "https://fepsino-production.up.railway.app", "https://fepsino.vercel.app"]
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:5173",
+    "https://fepsino-production.up.railway.app",
+    "https://fepsino.vercel.app"
+]
 CORS_ALLOW_CREDENTIALS = True
 
 SESSION_COOKIE_SAMESITE = "None"
