@@ -13,7 +13,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "https://fepsino-production.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "https://fepsino-production.up.railway.app, https://fepsino.vercel.app"]
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -23,8 +23,6 @@ SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SECURE = True
-
-CSRF_TRUSTED_ORIGINS = ["https://*.127.0.0.1", "https://*.localhost", "https://fepsino.vercel.app"]
 
 INSTALLED_APPS = [
     'django.contrib.auth',
